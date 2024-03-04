@@ -1,45 +1,69 @@
-import DataBase
 import tkinter as tk
-import mysql.connector
 from tkinter import messagebox
-
-
-
+from DataBase_Connection import get_database_connection
 
 class BookstoreApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Bookstore")
 
-        # Connect to the database
-        self.mydb = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="ehsan",
-            database="Book_Store"
-        )
-        self.cursor = self.mydb.cursor()
+        # Get the database connection
+        self.mydb, self.cursor = get_database_connection()
 
         # Create GUI elements
-        self.search_label = tk.Label(root, text="Search:")
+        self.create_main_page()
+
+    def create_main_page(self):
+        # Clear the window and create main page elements
+        self.clear_window()
+        self.search_label = tk.Label(self.root, text="Search:")
         self.search_label.grid(row=0, column=0)
-        self.search_entry = tk.Entry(root)
+        self.search_entry = tk.Entry(self.root)
         self.search_entry.grid(row=0, column=1)
-        self.search_button = tk.Button(root, text="Search", command=self.search_books)
+        self.search_button = tk.Button(self.root, text="Search", command=self.search_books)
         self.search_button.grid(row=0, column=2)
 
-        self.create_account_button = tk.Button(root, text="Create Account", command=self.create_account)
-        self.create_account_button.grid(row=1, column=0)
+        # Create a Listbox to display search results
+        self.search_results_listbox = tk.Listbox(self.root)
+        self.search_results_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
 
-        self.login_button = tk.Button(root, text="Login", command=self.login)
-        self.login_button.grid(row=1, column=1)
+        # Buttons for sign-in and sign-up
+        self.sign_in_button = tk.Button(self.root, text="Sign In", command=self.show_sign_in_page)
+        self.sign_in_button.grid(row=2, column=0)
+        self.sign_up_button = tk.Button(self.root, text="Sign Up", command=self.show_sign_up_page)
+        self.sign_up_button.grid(row=2, column=1)
+
+    def show_sign_in_page(self):
+        # Clear the window and create sign-in page elements
+        self.clear_window()
+        self.sign_in_label = tk.Label(self.root, text="Sign In Page")
+        self.sign_in_label.grid(row=0, column=0)
+        # Create sign-in input fields and button
+        # Example: username_entry = tk.Entry(self.root)
+        #          password_entry = tk.Entry(self.root, show="*")
+        #          sign_in_button = tk.Button(self.root, text="Sign In", command=self.sign_in)
+
+    def show_sign_up_page(self):
+        # Clear the window and create sign-up page elements
+        self.clear_window()
+        self.sign_up_label = tk.Label(self.root, text="Sign Up Page")
+        self.sign_up_label.grid(row=0, column=0)
+        # Create sign-up input fields and button
+        # Example: username_entry = tk.Entry(self.root)
+        #          password_entry = tk.Entry(self.root, show="*")
+        #          sign_up_button = tk.Button(self.root, text="Sign Up", command=self.sign_up)
+
+    def clear_window(self):
+        # Clear all widgets from the window
+        for widget in self.root.winfo_children():
+            widget.destroy()
 
     def search_books(self):
+        # Clear any previous search results
+        self.search_results_listbox.delete(0, tk.END)
+
         # Get the search query from the entry field
         search_query = self.search_entry.get()
-
-        # Clear any previous search results
-        # Implement this based on how you display search results in your GUI
 
         # Execute SQL query to search for books
         search_sql = "SELECT * FROM books WHERE title LIKE %s OR author LIKE %s"
@@ -50,20 +74,12 @@ class BookstoreApp:
         # Display search results in the GUI
         if search_results:
             for book in search_results:
-                # Implement how you want to display search results in your GUI
-                # For example, you could create labels or insert into a listbox
-                print(book)  # Placeholder, replace with GUI code
+                # Format the book information
+                book_info = f"Title: {book[3]}, Author: {book[1]}"
+                # Insert book information into the Listbox
+                self.search_results_listbox.insert(tk.END, book_info)
         else:
             messagebox.showinfo("Search", "No books found matching the search query.")
-
-    def create_account(self):
-        # Implement account creation functionality here
-        pass
-
-    def login(self):
-        # Implement login functionality here
-        pass
-
 
 if __name__ == "__main__":
     root = tk.Tk()
