@@ -1,4 +1,3 @@
-import mysql.connector
 from DataBase_Connection import get_database_connection
 
 # Get the database connection
@@ -29,8 +28,7 @@ mydb, cursor = get_database_connection()
 # CREATE TABLE                                                                  #CREATE TABLE  credit_cards
 # create_credit_cards_table = """
 # CREATE TABLE IF NOT EXISTS credit_cards (
-#     card_id INT AUTO_INCREMENT PRIMARY KEY,
-#     user_id INT,
+#     user_id INT AUTO_INCREMENT PRIMARY KEY,
 #     card_number VARCHAR(16),
 #     exp_date DATE,
 #     card_type VARCHAR(50),
@@ -61,7 +59,7 @@ mydb, cursor = get_database_connection()
 # cursor.execute(create_credit_cards_table)
 # cursor.execute(create_books_table)
 
-##############################################        INSERT sample book
+##########################################################################      INSERT sample book
 # # Sample book data
 # author = "John Doe"
 # category = "Fiction"
@@ -88,4 +86,4 @@ mydb, cursor = get_database_connection()
 #
 # # Commit the transaction
 # mydb.commit()
-##################################################
+######################################################################################
