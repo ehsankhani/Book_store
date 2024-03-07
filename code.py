@@ -6,6 +6,8 @@ class BookstoreApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Bookstore")
+        self.is_logged_in = False
+        self.logged_in_username = None
 
         # Get the database connection
         self.mydb, self.cursor = get_database_connection()
@@ -33,6 +35,13 @@ class BookstoreApp:
         self.sign_up_button = tk.Button(self.root, text="Sign Up", command=self.show_sign_up_page)
         self.sign_up_button.grid(row=2, column=1)
 
+        # Create login status label
+        self.login_status_label = tk.Label(self.root, text="", fg="red")
+        self.login_status_label.grid(row=3, columnspan=3)
+
+        # Update login status
+        self.update_login_status()
+
     def show_sign_in_page(self):
         # Clear the window and create sign-in page elements
         self.clear_window()
@@ -57,6 +66,13 @@ class BookstoreApp:
         # Create back button
         self.create_back_button()
 
+    def go_back(self):
+        # Check if the user is logged in
+        if self.is_logged_in:
+            self.create_main_page()  # Go back to the main page
+        else:
+            self.show_sign_in_page()  # Go back to the sign-in page
+
     def validate_and_sign_in(self):
         # Get user inputs
         username = self.username_entry.get()
@@ -69,12 +85,21 @@ class BookstoreApp:
 
         # Check if the user exists and credentials are correct
         self.cursor.execute("SELECT * FROM users WHERE username = %s AND password = %s", (username, password))
-        if self.cursor.fetchone():
+        user = self.cursor.fetchone()
+        if user:
             messagebox.showinfo("Success", "Sign-in successful!")
+            self.is_logged_in = True
+            self.logged_in_username = user[3]  # Assuming the name is in the fourth column
         else:
             messagebox.showerror("Error", "Invalid username or password.")
+            self.is_logged_in = False
 
-    # Add this method inside the class to create the back button
+        # Update login status
+        self.update_login_status()
+
+        # Go back to the previous page
+        self.go_back()
+
     def create_back_button(self):
         # Create back button to navigate to the last page
         self.back_button = tk.Button(self.root, text="Back", command=self.create_main_page)
@@ -217,10 +242,122 @@ class BookstoreApp:
         else:
             messagebox.showinfo("Search", "No books found matching the search query.")
 
-    def create_back_button(self):
-        # Create back button to navigate to the last page
-        self.back_button = tk.Button(self.root, text="Back", command=self.create_main_page)
-        self.back_button.grid(row=12, column=1, sticky="se")
+    def update_login_status(self):
+        # Clear any existing welcome and logout buttons
+        if hasattr(self, 'welcome_label'):
+            self.welcome_label.destroy()
+        if hasattr(self, 'logout_button'):
+            self.logout_button.destroy()
+
+        # Update welcome message and display logout button if logged in
+        if self.is_logged_in:
+            self.welcome_label = tk.Label(self.root, text=f"Welcome, {self.logged_in_username}", fg="green")
+            self.welcome_label.grid(row=3, columnspan=2)
+
+            self.logout_button = tk.Button(self.root, text="Logout", command=self.logout)
+            self.logout_button.grid(row=3, column=2)
+
+            # Show view and edit info buttons
+            self.view_info_button = tk.Button(self.root, text="View Info", command=self.view_user_info)
+            self.view_info_button.grid(row=4, column=1)
+            self.edit_info_button = tk.Button(self.root, text="Edit Info", command=self.edit_user_info)
+            self.edit_info_button.grid(row=4, column=2)
+        else:
+            self.welcome_label = tk.Label(self.root, text="not logged in", fg="red")
+            self.welcome_label.grid(row=3, columnspan=3)
+
+    def view_user_info(self):
+        # Retrieve user information from the database
+        self.cursor.execute("SELECT * FROM users WHERE username = %s", (self.logged_in_username,))
+        user_info = self.cursor.fetchone()
+
+        # Display user information in a dialog box
+        if user_info:
+            user_info_text = f"Username: {user_info[1]}\nFirst Name: {user_info[3]}\nLast Name: {user_info[4]}\nCity: {user_info[5]}\nState: {user_info[6]}\nZip Code: {user_info[7]}"
+            messagebox.showinfo("User Info", user_info_text)
+        else:
+            messagebox.showerror("Error", "Failed to retrieve user information.")
+
+    def edit_user_info(self):
+        # Clear the window
+        self.clear_window()
+
+        # Create the edit page
+        self.edit_selected_parameter_page()
+
+    def edit_selected_parameter_page(self):
+        # List of parameters
+        parameters = ["Username", "Password", "First Name", "Last Name", "City", "State", "Zip Code"]
+
+        # Prompt user to select a parameter to edit
+        selected_parameter = tk.StringVar(value=parameters[0])  # Default selection
+        parameter_label = tk.Label(self.root, text="Select parameter to edit:")
+        parameter_label.grid(row=0, column=0)
+        parameter_dropdown = tk.OptionMenu(self.root, selected_parameter, *parameters)
+        parameter_dropdown.grid(row=0, column=1)
+
+        # Button to confirm parameter selection
+        confirm_button = tk.Button(self.root, text="Confirm",
+                                   command=lambda: self.edit_selected_parameter(selected_parameter.get()))
+        confirm_button.grid(row=1, columnspan=2)
+
+        # Create back button
+        self.create_back_button()
+    def edit_selected_parameter(self, parameter):
+        # Clear the window
+        self.clear_window()
+
+        # Create labels and entry fields for editing the selected parameter
+        parameter_label = tk.Label(self.root, text=f"Edit {parameter}:")
+        parameter_label.grid(row=0, column=0)
+        new_value_entry = tk.Entry(self.root)
+        new_value_entry.grid(row=0, column=1)
+
+        # Button to confirm the new value
+        confirm_button = tk.Button(self.root, text="Confirm",
+                                   command=lambda: self.update_parameter(parameter, new_value_entry.get()))
+        confirm_button.grid(row=1, columnspan=2)
+
+    def update_parameter(self, parameter, new_value):
+        try:
+            # Update the parameter in the database
+            if parameter.lower() in ["username", "password", "first name", "last name", "city", "state", "zip code"]:
+                # Update user information
+                self.cursor.execute(f"UPDATE users SET {parameter.lower().replace(' ', '_')} = %s WHERE username = %s",
+                                    (new_value, self.logged_in_username))
+            elif parameter.lower() in ["credit card number", "expiry date", "card type"]:
+                # Update credit card information
+                self.cursor.execute(
+                    f"UPDATE credit_cards SET {parameter.lower().replace(' ', '_')} = %s WHERE user_id = (SELECT user_id FROM users WHERE username = %s)",
+                    (new_value, self.logged_in_username))
+
+            # Commit the changes to the database
+            self.mydb.commit()
+
+            # Clear the screen
+            self.clear_window()
+
+            # Show a messagebox indicating successful update
+            messagebox.showinfo("Update Info", f"{parameter.capitalize()} updated successfully.")
+
+            # After updating the parameter, you may want to refresh the user interface to reflect the changes
+            # For example, you can call a method to update the user's information displayed on the screen
+            self.update_login_status()  # Update login status to reflect changes
+        except Exception as e:
+            # Show error messagebox if update fails
+            messagebox.showerror("Update Error", f"Failed to update {parameter}: {str(e)}")
+
+    def logout(self):
+        # Clear logged-in user information
+        self.is_logged_in = False
+        self.logged_in_username = None
+
+        # Update login status
+        self.update_login_status()
+
+        # Clear the window and go back to the main page
+        self.create_main_page()
+
 
 if __name__ == "__main__":
     root = tk.Tk()
