@@ -213,7 +213,7 @@ class BookstoreApp:
             messagebox.showinfo("Success", "Credit card information stored successfully!")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to sign up: {str(e)}")
-
+        self.create_main_page()
     def clear_window(self):
         # Clear all widgets from the window
         for widget in self.root.winfo_children():
@@ -248,6 +248,8 @@ class BookstoreApp:
             self.welcome_label.destroy()
         if hasattr(self, 'logout_button'):
             self.logout_button.destroy()
+        if hasattr(self, 'msg_box_button'):
+            self.msg_box_button.destroy()
 
         # Update welcome message and display logout button if logged in
         if self.is_logged_in:
@@ -262,9 +264,32 @@ class BookstoreApp:
             self.view_info_button.grid(row=4, column=1)
             self.edit_info_button = tk.Button(self.root, text="Edit Info", command=self.edit_user_info)
             self.edit_info_button.grid(row=4, column=2)
+
+            # Show Message Box button
+            self.msg_box_button = tk.Button(self.root, text="Message Box", command=self.show_message_box)
+            self.msg_box_button.grid(row=4, column=0)
         else:
             self.welcome_label = tk.Label(self.root, text="not logged in", fg="red")
             self.welcome_label.grid(row=3, columnspan=3)
+
+    def show_message_box(self):
+        # Remember the current page
+        self.previous_page = self.root.winfo_children()
+
+        # Clear the window
+        self.clear_window()
+
+        # Get message box content from the database
+        self.cursor.execute("SELECT msg_box FROM admin WHERE username = %s", (self.logged_in_username,))
+        message_box_content = self.cursor.fetchone()
+
+        # Display message box content in a dialog box
+        if message_box_content:
+            messagebox.showinfo("Message Box", message_box_content[0])
+        else:
+            messagebox.showinfo("Message Box", "No messages in the message box.")
+
+        self.create_main_page()
 
     def view_user_info(self):
         # Retrieve user information from the database
@@ -285,9 +310,10 @@ class BookstoreApp:
         # Create the edit page
         self.edit_selected_parameter_page()
 
+
     def edit_selected_parameter_page(self):
         # List of parameters
-        parameters = ["Username", "Password", "First Name", "Last Name", "City", "State", "Zip Code"]
+        parameters = ["Password", "First Name", "Last Name", "City", "State", "Zip Code"]
 
         # Prompt user to select a parameter to edit
         selected_parameter = tk.StringVar(value=parameters[0])  # Default selection
@@ -317,11 +343,13 @@ class BookstoreApp:
         confirm_button = tk.Button(self.root, text="Confirm",
                                    command=lambda: self.update_parameter(parameter, new_value_entry.get()))
         confirm_button.grid(row=1, columnspan=2)
+        self.create_back_button()
+
 
     def update_parameter(self, parameter, new_value):
         try:
             # Update the parameter in the database
-            if parameter.lower() in ["username", "password", "first name", "last name", "city", "state", "zip code"]:
+            if parameter.lower() in ["password", "first name", "last name", "city", "state", "zip code"]:
                 # Update user information
                 self.cursor.execute(f"UPDATE users SET {parameter.lower().replace(' ', '_')} = %s WHERE username = %s",
                                     (new_value, self.logged_in_username))
@@ -346,6 +374,7 @@ class BookstoreApp:
         except Exception as e:
             # Show error messagebox if update fails
             messagebox.showerror("Update Error", f"Failed to update {parameter}: {str(e)}")
+        self.create_main_page()
 
     def logout(self):
         # Clear logged-in user information

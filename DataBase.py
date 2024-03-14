@@ -115,7 +115,7 @@ mydb, cursor = get_database_connection()
 #
 # # Execute the SQL statement
 # cursor.execute(create_table_query)
-# # CREATE TABLE ADMIN                                                    # CREATE TABLE ADMIN
+# CREATE TABLE ADMIN                                                    # CREATE TABLE ADMIN
 # create_table_query = """
 # CREATE TABLE IF NOT EXISTS admin (
 #     admin_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -133,26 +133,26 @@ mydb, cursor = get_database_connection()
 # SQL statement to add the date_in_out column
 # alter_query = """
 # ALTER TABLE admin
-# ADD COLUMN date_in_out DATETIME;
+# ADD COLUMN date_out DATETIME;
 # """
 #
 # # Execute the SQL statement
 # cursor.execute(alter_query)
 
 # SQL statement to insert a new admin
-insert_query = """
-    INSERT INTO admin (username, password, msg_box, purchase_actions, worked_purchase_ids, orders, book_operations, catalog_changes, date_in_out)
-    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-"""
-
-# Define the values for the new admin
-new_admin_values = ('ehsanAdmin', 'ehsanAdmin', 'new_admin_msg_box', 'new_admin_purchase_actions', 'new_admin_worked_purchase_ids', 'new_admin_orders', 'new_admin_book_operations', 'new_admin_catalog_changes', datetime.now())
-
-# Execute the INSERT query with the values
-cursor.execute(insert_query, new_admin_values)
-
-# Commit the transaction
-mydb.commit()
+# insert_query = """
+#     INSERT INTO admin (username, password, msg_box, purchase_actions, worked_purchase_ids, orders, book_operations, catalog_changes, date_in_out)
+#     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+# """
+#
+# # Define the values for the new admin
+# new_admin_values = ('ehsanAdmin', 'ehsanAdmin', 'new_admin_msg_box', 'new_admin_purchase_actions', 'new_admin_worked_purchase_ids', 'new_admin_orders', 'new_admin_book_operations', 'new_admin_catalog_changes', datetime.now())
+#
+# # Execute the INSERT query with the values
+# cursor.execute(insert_query, new_admin_values)
+#
+# # Commit the transaction
+# mydb.commit()
 ###########################################################################################################33
 # SQL statement to create the manager table
 # CREATE TABLE manager                                                            # CREATE TABLE manager
@@ -162,7 +162,8 @@ mydb.commit()
 #     msg_box TEXT,
 #     full_name VARCHAR(50),
 #     national_id VARCHAR(10),
-#     date_in_out DATETIME,
+#     date_in DATETIME,
+#     date_out DATETIME,
 #     allowed_purchases TEXT,
 #     orders_to_add TEXT,
 #     book_oprations TEXT
@@ -171,3 +172,26 @@ mydb.commit()
 #
 # # Execute the SQL statement
 # cursor.execute(create_table_query)
+#SQL statement to insert a new row into the manager table
+######################################################################################
+# Define the values for the new manager                                          # Define the values for the new manager
+# new_manager_values = {
+#     "msg_box": None,
+#     "full_name": "ehsan m",
+#     "national_id": "0312402376",
+#     "date_in": datetime.now(),
+#     "date_out": None,
+#     "allowed_purchases": None,
+#     "orders_to_add": None,
+#     "book_oprations": None
+# }
+# insert_query = """
+#     INSERT INTO manager (msg_box, full_name, national_id, date_in, date_out, allowed_purchases, orders_to_add, book_oprations)
+#     VALUES (%(msg_box)s, %(full_name)s, %(national_id)s, %(date_in)s, %(date_out)s, %(allowed_purchases)s, %(orders_to_add)s, %(book_oprations)s)
+# """
+#
+# # Execute the INSERT query with the values
+# cursor.execute(insert_query, new_manager_values)
+#
+# # Commit the transaction
+# mydb.commit()
