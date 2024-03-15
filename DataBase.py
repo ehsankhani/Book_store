@@ -131,28 +131,31 @@ mydb, cursor = get_database_connection()
 # """
 # cursor.execute(create_table_query)
 # SQL statement to add the date_in_out column
-# alter_query = """
-# ALTER TABLE admin
-# ADD COLUMN date_out DATETIME;
-# """
-#
-# # Execute the SQL statement
-# cursor.execute(alter_query)
+alter_query = """
+ALTER TABLE manager
+ADD COLUMN password VARCHAR(20);
+"""
+
+# Execute the SQL statement
+cursor.execute(alter_query)
 
 # SQL statement to insert a new admin
 # insert_query = """
-#     INSERT INTO admin (username, password, msg_box, purchase_actions, worked_purchase_ids, orders, book_operations, catalog_changes, date_in_out)
-#     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-# """
+# #     INSERT INTO admin (username, password, national_id, msg_box, purchase_actions,
+# #                        worked_purchase_ids, orders, book_operations, catalog_changes,
+# #                        date_in, date_out)
+# #     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+# # """
 #
 # # Define the values for the new admin
-# new_admin_values = ('ehsanAdmin', 'ehsanAdmin', 'new_admin_msg_box', 'new_admin_purchase_actions', 'new_admin_worked_purchase_ids', 'new_admin_orders', 'new_admin_book_operations', 'new_admin_catalog_changes', datetime.now())
+# new_admin_values = ('ehsanAdmin', '123123', '031240', None, None, None, None, None, None, datetime.now(), None)
 #
 # # Execute the INSERT query with the values
 # cursor.execute(insert_query, new_admin_values)
 #
 # # Commit the transaction
 # mydb.commit()
+
 ###########################################################################################################33
 # SQL statement to create the manager table
 # CREATE TABLE manager                                                            # CREATE TABLE manager
@@ -195,3 +198,7 @@ mydb, cursor = get_database_connection()
 #
 # # Commit the transaction
 # mydb.commit()
+
+# -- Add a new column 'password' to the 'manager' table
+
+

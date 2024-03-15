@@ -8,6 +8,7 @@ class BookstoreApp:
         self.root.title("Bookstore")
         self.is_logged_in = False
         self.logged_in_username = None
+        self.is_admin = False  # Flag to indicate admin login status
 
         # Get the database connection
         self.mydb, self.cursor = get_database_connection()
@@ -18,28 +19,27 @@ class BookstoreApp:
     def create_main_page(self):
         # Clear the window and create main page elements
         self.clear_window()
-        self.search_label = tk.Label(self.root, text="Search:")
-        self.search_label.grid(row=0, column=0)
+
+        # GUI elements for main page
+        tk.Label(self.root, text="Search:").grid(row=0, column=0)
         self.search_entry = tk.Entry(self.root)
         self.search_entry.grid(row=0, column=1)
-        self.search_button = tk.Button(self.root, text="Search", command=self.search_books)
-        self.search_button.grid(row=0, column=2)
-
-        # Create a Listbox to display search results
+        tk.Button(self.root, text="Search", command=self.search_books).grid(row=0, column=2)
         self.search_results_listbox = tk.Listbox(self.root)
         self.search_results_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
 
         # Buttons for sign-in and sign-up
-        self.sign_in_button = tk.Button(self.root, text="Sign In", command=self.show_sign_in_page)
-        self.sign_in_button.grid(row=2, column=0)
-        self.sign_up_button = tk.Button(self.root, text="Sign Up", command=self.show_sign_up_page)
-        self.sign_up_button.grid(row=2, column=1)
+        tk.Button(self.root, text="Sign In", command=self.show_sign_in_page).grid(row=2, column=0)
+        tk.Button(self.root, text="Sign Up", command=self.show_sign_up_page).grid(row=2, column=1)
 
-        # Create login status label
+        # Buttons for admin and manager login
+        tk.Button(self.root, text="Admin Login", command=self.show_admin_login_page).grid(row=3, column=2, sticky="w")
+        tk.Button(self.root, text="Manager Login", command=self.show_manager_login_page).grid(row=2, column=2,
+                                                                                              sticky="e")
+
         self.login_status_label = tk.Label(self.root, text="", fg="red")
         self.login_status_label.grid(row=3, columnspan=3)
 
-        # Update login status
         self.update_login_status()
 
     def show_sign_in_page(self):
@@ -62,6 +62,54 @@ class BookstoreApp:
         # Button to submit sign-in information
         self.sign_in_button = tk.Button(self.root, text="Sign In", command=self.validate_and_sign_in)
         self.sign_in_button.grid(row=3, columnspan=2)
+
+        # Create back button
+        self.create_back_button()
+
+    def show_admin_login_page(self):
+        # Clear the window and create admin login page elements
+        self.clear_window()
+        self.admin_login_label = tk.Label(self.root, text="Admin Login")
+        self.admin_login_label.grid(row=0, column=0)
+
+        # Create login input fields
+        self.username_label = tk.Label(self.root, text="Username:")
+        self.username_label.grid(row=1, column=0)
+        self.username_entry = tk.Entry(self.root)
+        self.username_entry.grid(row=1, column=1)
+
+        self.password_label = tk.Label(self.root, text="Password:")
+        self.password_label.grid(row=2, column=0)
+        self.password_entry = tk.Entry(self.root, show="*")
+        self.password_entry.grid(row=2, column=1)
+
+        # Button to submit admin login information
+        self.admin_login_button = tk.Button(self.root, text="Login", command=self.validate_and_sign_in_admin)
+        self.admin_login_button.grid(row=3, columnspan=2)
+
+        # Create back button
+        self.create_back_button()
+
+    def show_manager_login_page(self):
+        # Clear the window and create manager login page elements
+        self.clear_window()
+        self.manager_login_label = tk.Label(self.root, text="Manager Login")
+        self.manager_login_label.grid(row=0, column=0)
+
+        # Create login input fields
+        self.username_label = tk.Label(self.root, text="Username:")
+        self.username_label.grid(row=1, column=0)
+        self.username_entry = tk.Entry(self.root)
+        self.username_entry.grid(row=1, column=1)
+
+        self.password_label = tk.Label(self.root, text="Password:")
+        self.password_label.grid(row=2, column=0)
+        self.password_entry = tk.Entry(self.root, show="*")
+        self.password_entry.grid(row=2, column=1)
+
+        # Button to submit manager login information
+        self.manager_login_button = tk.Button(self.root, text="Login", command=self.validate_and_sign_in_manager)
+        self.manager_login_button.grid(row=3, columnspan=2)
 
         # Create back button
         self.create_back_button()
@@ -99,6 +147,217 @@ class BookstoreApp:
 
         # Go back to the previous page
         self.go_back()
+
+    def validate_and_sign_in_admin(self):
+        # Get user inputs
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        # Validate inputs
+        if not (username and password):
+            messagebox.showerror("Error", "Please fill in all fields.")
+            return
+
+        # Check if the user exists and credentials are correct
+        # Perform authentication for admin here, using a separate table for admins
+        # Replace 'admin_table' with the actual table name for admins
+        self.cursor.execute("SELECT * FROM admin WHERE username = %s AND password = %s", (username, password))
+        admin = self.cursor.fetchone()
+        if admin:
+            # Sign-in successful
+            messagebox.showinfo("Success", "Admin sign-in successful!")
+            self.open_admin_page()
+        else:
+            # Invalid credentials
+            messagebox.showerror("Error", "Invalid username or password.")
+
+    def validate_and_sign_in_manager(self):
+        # Get user inputs
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        # Validate inputs
+        if not (username and password):
+            messagebox.showerror("Error", "Please fill in all fields.")
+            return
+
+        # Check if the user exists and credentials are correct
+        # Perform authentication for manager here, using a separate table for managers
+        # Replace 'manager_table' with the actual table name for managers
+        self.cursor.execute("SELECT * FROM manager WHERE full_name = %s AND password = %s", (username, password))
+        manager = self.cursor.fetchone()
+        if manager:
+            # Sign-in successful
+            messagebox.showinfo("Success", "Manager sign-in successful!")
+            self.open_manager_page()
+        else:
+            # Invalid credentials
+            messagebox.showerror("Error", "Invalid username or password.")
+
+    def open_admin_page(self):
+        # Clear the window and create the admin page
+        self.clear_window()
+        welcome_label = tk.Label(self.root, text="Welcome Admin", fg="green")
+        welcome_label.grid(row=0, column=0, columnspan=2)
+
+        # Create a button to manage the bookstore
+        manage_bookstore_button = tk.Button(self.root, text="Manage Bookstore",
+                                            command=self.open_bookstore_management_page)
+        manage_bookstore_button.grid(row=1, column=0, padx=10, pady=5)
+
+        # Create a button for listing the books
+        list_books_button = tk.Button(self.root, text="List of the Books", command=self.show_book_list)
+        list_books_button.grid(row=1, column=1, padx=10, pady=5)
+
+        # Create a back button
+        back_button = tk.Button(self.root, text="Back", command=self.go_back)
+        back_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+
+    def open_bookstore_management_page(self):
+        # Clear the window and create the page for managing the bookstore
+        self.clear_window()
+        tk.Label(self.root, text="Manage Bookstore", fg="blue").grid(row=0, column=0, columnspan=2)
+
+        # Create buttons for managing the bookstore
+        insert_button = tk.Button(self.root, text="Insert Book", command=self.insert_book_ui)
+        insert_button.grid(row=1, column=0, padx=10, pady=5)
+
+        modify_button = tk.Button(self.root, text="Modify Book", command=self.modify_book)
+        modify_button.grid(row=1, column=1, padx=10, pady=5)
+
+        delete_button = tk.Button(self.root, text="Delete Book", command=self.delete_book)
+        delete_button.grid(row=2, column=0, padx=10, pady=5)
+
+        back_button = tk.Button(self.root, text="Back", command=self.open_admin_page)
+        back_button.grid(row=2, column=1, padx=10, pady=5)
+
+    def show_book_list(self):
+        # Clear the window
+        self.clear_window()
+
+        # Retrieve the list of books from the database
+        self.cursor.execute("SELECT * FROM books")
+        books = self.cursor.fetchall()
+
+        # Display the list of books in a new window or dialog box
+        book_list_window = tk.Toplevel(self.root)
+        book_list_window.title("List of Books")
+
+        # Create a listbox to display the book titles
+        book_listbox = tk.Listbox(book_list_window)
+        book_listbox.pack(padx=10, pady=10)
+
+        # Insert each book title into the listbox
+        for book in books:
+            book_listbox.insert(tk.END, f"{book[3]} by {book[1]}")
+
+        # Double-click event handler for showing book details
+        def show_book_details(event):
+            # Get the index of the selected book in the listbox
+            selected_index = book_listbox.curselection()
+            if selected_index:
+                index = int(selected_index[0])
+                selected_book = books[index]
+
+                # Display book details in a messagebox
+                messagebox.showinfo("Book Details",
+                                    f"Title: {selected_book[3]}\nAuthor: {selected_book[1]}\nCategory: {selected_book[2]}\nISBN: {selected_book[4]}\nReview: {selected_book[5]}\nPublisher: {selected_book[6]}\nMinimum Property: {selected_book[7]}\nPresent Property: {selected_book[8]}\nPrice: {selected_book[9]}\nPublish Year: {selected_book[10]}")
+
+        # Bind the ddouble-click event to the listbox
+        book_listbox.bind("<Double-Button-1>", show_book_details)
+
+    def insert_book_ui(self):
+        # Clear the window
+        self.clear_window()
+
+        # Create labels and entry fields for book details
+        tk.Label(self.root, text="Author:").grid(row=0, column=0)
+        author_entry = tk.Entry(self.root)
+        author_entry.grid(row=0, column=1)
+
+        tk.Label(self.root, text="Category:").grid(row=1, column=0)
+        category_var = tk.StringVar()
+        categories = ["Fiction", "poetry", "Children", "classic", "romance", "History",
+                      "Psychology", "Travel/Adventure", "Biography/Autobiography"]
+        category_combobox = tk.OptionMenu(self.root, category_var, *categories)
+        category_combobox.grid(row=1, column=1)
+
+        tk.Label(self.root, text="Title:").grid(row=2, column=0)
+        title_entry = tk.Entry(self.root)
+        title_entry.grid(row=2, column=1)
+
+        tk.Label(self.root, text="ISBN:").grid(row=3, column=0)
+        isbn_entry = tk.Entry(self.root)
+        isbn_entry.grid(row=3, column=1)
+
+        tk.Label(self.root, text="Review:").grid(row=4, column=0)
+        review_entry = tk.Entry(self.root)
+        review_entry.grid(row=4, column=1)
+
+        tk.Label(self.root, text="Publisher:").grid(row=5, column=0)
+        publisher_entry = tk.Entry(self.root)
+        publisher_entry.grid(row=5, column=1)
+
+        tk.Label(self.root, text="Min. Property:").grid(row=6, column=0)
+        min_property_entry = tk.Entry(self.root)
+        min_property_entry.grid(row=6, column=1)
+
+        tk.Label(self.root, text="Present Property:").grid(row=7, column=0)
+        present_property_entry = tk.Entry(self.root)
+        present_property_entry.grid(row=7, column=1)
+
+        tk.Label(self.root, text="Price:").grid(row=8, column=0)
+        price_entry = tk.Entry(self.root)
+        price_entry.grid(row=8, column=1)
+
+        tk.Label(self.root, text="Publish Year:").grid(row=9, column=0)
+        publish_year_entry = tk.Entry(self.root)
+        publish_year_entry.grid(row=9, column=1)
+
+        # Button to submit book details
+        submit_button = tk.Button(self.root, text="Submit", command=lambda: self.insert_book(
+            author_entry.get(), category_var.get(), title_entry.get(), isbn_entry.get(), review_entry.get(),
+            publisher_entry.get(), min_property_entry.get(), present_property_entry.get(), price_entry.get(),
+            publish_year_entry.get()
+        ))
+        submit_button.grid(row=10, columnspan=2)
+
+        # Create back button
+        self.create_back_button()
+
+    def insert_book(self, author, category, title, isbn, review, publisher, min_property, present_property, price,
+                    publish_year):
+        try:
+            # Insert the book details into the database
+            self.cursor.execute(
+                "INSERT INTO books (author, category, title, ISBN, review, publisher, minimum_property, present_stock, price, publish_year, catalog_flag) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (author, category, title, isbn, review, publisher, min_property, present_property, price, publish_year,
+                 1))
+            self.mydb.commit()
+
+            # Show success message
+            messagebox.showinfo("Success", "Book inserted successfully!")
+        except Exception as e:
+            # Show error message if insertion fails
+            messagebox.showerror("Error", f"Failed to insert book: {str(e)}")
+
+        # Navigate back to the management page
+        self.open_admin_page()
+
+    def modify_book(self):
+        # Add functionality to modify an existing book
+        pass
+
+    def delete_book(self):
+        # Add functionality to delete a book
+        pass
+
+    def open_manager_page(self):
+        # Clear the window and create the manager page
+        self.clear_window()
+        tk.Label(self.root, text="Welcome Manager", fg="green").pack()
+        # Add manager-specific GUI elements here
+        # For example, buttons to perform manager actions
 
     def create_back_button(self):
         # Create back button to navigate to the last page
@@ -280,7 +539,7 @@ class BookstoreApp:
         self.clear_window()
 
         # Get message box content from the database
-        self.cursor.execute("SELECT msg_box FROM admin WHERE username = %s", (self.logged_in_username,))
+        self.cursor.execute("SELECT msg_box FROM users WHERE username = %s", (self.logged_in_username,))
         message_box_content = self.cursor.fetchone()
 
         # Display message box content in a dialog box
