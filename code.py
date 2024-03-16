@@ -232,19 +232,15 @@ class BookstoreApp:
         back_button.grid(row=2, column=1, padx=10, pady=5)
 
     def show_book_list(self):
-        # Clear the window
+        # Clear the current window
         self.clear_window()
 
         # Retrieve the list of books from the database
         self.cursor.execute("SELECT * FROM books")
         books = self.cursor.fetchall()
 
-        # Display the list of books in a new window or dialog box
-        book_list_window = tk.Toplevel(self.root)
-        book_list_window.title("List of Books")
-
         # Create a listbox to display the book titles
-        book_listbox = tk.Listbox(book_list_window)
+        book_listbox = tk.Listbox(self.root)
         book_listbox.pack(padx=10, pady=10)
 
         # Insert each book title into the listbox
@@ -263,8 +259,12 @@ class BookstoreApp:
                 messagebox.showinfo("Book Details",
                                     f"Title: {selected_book[3]}\nAuthor: {selected_book[1]}\nCategory: {selected_book[2]}\nISBN: {selected_book[4]}\nReview: {selected_book[5]}\nPublisher: {selected_book[6]}\nMinimum Property: {selected_book[7]}\nPresent Property: {selected_book[8]}\nPrice: {selected_book[9]}\nPublish Year: {selected_book[10]}")
 
-        # Bind the ddouble-click event to the listbox
+        # Bind the double-click event to the listbox
         book_listbox.bind("<Double-Button-1>", show_book_details)
+
+        # Create a back button to return to the main admin page
+        back_button = tk.Button(self.root, text="Back", command=self.open_admin_page)
+        back_button.pack(pady=5)
 
     def insert_book_ui(self):
         # Clear the window

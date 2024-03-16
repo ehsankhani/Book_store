@@ -131,13 +131,13 @@ mydb, cursor = get_database_connection()
 # """
 # cursor.execute(create_table_query)
 # SQL statement to add the date_in_out column
-alter_query = """
-ALTER TABLE manager
-ADD COLUMN password VARCHAR(20);
-"""
-
-# Execute the SQL statement
-cursor.execute(alter_query)
+# alter_query = """
+# ALTER TABLE manager
+# ADD COLUMN password VARCHAR(20);
+# """
+#
+# # Execute the SQL statement
+# cursor.execute(alter_query)
 
 # SQL statement to insert a new admin
 # insert_query = """
