@@ -465,8 +465,59 @@ class BookstoreApp:
         back_button.pack(pady=5)
 
     def delete_book(self):
-        # Add functionality to delete a book
-        pass
+        # Clear the window and show the list of books for deletion
+        self.clear_window()
+        self.show_book_list_for_deletion()
+
+    def show_book_list_for_deletion(self):
+        # Retrieve the list of books from the database
+        self.cursor.execute("SELECT book_id, title FROM books")
+        books = self.cursor.fetchall()
+
+        # Create a listbox to display the book titles
+        book_listbox = tk.Listbox(self.root)
+        book_listbox.pack(padx=10, pady=10)
+
+        # Insert each book title into the listbox
+        for book in books:
+            book_listbox.insert(tk.END, f"{book[1]}")
+
+        # Function to delete book from catalog
+        def delete_from_catalog():
+            # Get the index of the selected book in the listbox
+            selected_index = book_listbox.curselection()
+            if selected_index:
+                index = int(selected_index[0])
+                selected_book_id = books[index][0]
+
+                # Update the catalog flag to 0 for the selected book
+                self.cursor.execute("UPDATE books SET catalog_flag = 0 WHERE book_id = %s", (selected_book_id,))
+                self.mydb.commit()
+                messagebox.showinfo("Success", "Book deleted from catalog successfully.")
+
+        # Function to delete book from database
+        def delete_from_database():
+            # Get the index of the selected book in the listbox
+            selected_index = book_listbox.curselection()
+            if selected_index:
+                index = int(selected_index[0])
+                selected_book_id = books[index][0]
+
+                # Delete the book from the database
+                self.cursor.execute("DELETE FROM books WHERE book_id = %s", (selected_book_id,))
+                self.mydb.commit()
+                messagebox.showinfo("Success", "Book deleted from database successfully.")
+
+        # Create buttons for deletion options
+        delete_catalog_button = tk.Button(self.root, text="Delete from Catalog", command=delete_from_catalog)
+        delete_catalog_button.pack(padx=10, pady=5)
+
+        delete_database_button = tk.Button(self.root, text="Delete from Database", command=delete_from_database)
+        delete_database_button.pack(padx=10, pady=5)
+
+        # Create a back button to return to the book store management page
+        back_button = tk.Button(self.root, text="Back", command=self.open_bookstore_management_page)
+        back_button.pack(pady=5)
 
     def open_manager_page(self):
         # Clear the window and create the manager page
