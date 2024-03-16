@@ -345,8 +345,124 @@ class BookstoreApp:
         self.open_admin_page()
 
     def modify_book(self):
-        # Add functionality to modify an existing book
-        pass
+        # Clear the window
+        self.clear_window()
+
+        # Retrieve the list of books from the database
+        self.cursor.execute("SELECT * FROM books")
+        books = self.cursor.fetchall()
+
+        # Create a listbox to display the book titles
+        book_listbox = tk.Listbox(self.root)
+        book_listbox.pack(padx=10, pady=10)
+
+        # Insert each book title into the listbox
+        for book in books:
+            book_listbox.insert(tk.END, f"{book[3]} by {book[1]}")
+
+        # Function to show book details and edit
+        def show_book_to_edit(event):
+            # Get the index of the selected book in the listbox
+            selected_index = book_listbox.curselection()
+            if selected_index:
+                index = int(selected_index[0])
+                selected_book = books[index]
+
+                # Function to update book information
+                def update_book_info():
+                    # Retrieve the new values entered by the admin
+                    new_author = author_entry.get()
+                    new_category = category_entry.get()
+                    new_title = title_entry.get()
+                    new_review = review_entry.get()
+                    new_publisher = publisher_entry.get()
+                    new_min_property = min_property_entry.get()
+                    new_present_stock = present_stock_entry.get()
+                    new_price = price_entry.get()
+                    new_publish_year = publish_year_entry.get()
+
+                    # Update the book information in the database
+                    self.cursor.execute("""
+                        UPDATE books 
+                        SET author=%s, category=%s, title=%s, review=%s, publisher=%s, 
+                            minimum_property=%s, present_stock=%s, price=%s, publish_year=%s
+                        WHERE book_id=%s
+                    """, (new_author, new_category, new_title, new_review, new_publisher,
+                          new_min_property, new_present_stock, new_price, new_publish_year, selected_book[0]))
+                    self.mydb.commit()
+                    messagebox.showinfo("Success", "Book information updated successfully.")
+
+                    # Clear the entry fields
+                    author_entry.delete(0, tk.END)
+                    category_entry.delete(0, tk.END)
+                    title_entry.delete(0, tk.END)
+                    review_entry.delete(0, tk.END)
+                    publisher_entry.delete(0, tk.END)
+                    min_property_entry.delete(0, tk.END)
+                    present_stock_entry.delete(0, tk.END)
+                    price_entry.delete(0, tk.END)
+                    publish_year_entry.delete(0, tk.END)
+
+                # Display book details and entry fields to edit
+                edit_window = tk.Toplevel(self.root)
+                edit_window.title("Edit Book Details")
+
+                tk.Label(edit_window, text="Author:").grid(row=0, column=0, sticky="e")
+                tk.Label(edit_window, text="Category:").grid(row=1, column=0, sticky="e")
+                tk.Label(edit_window, text="Title:").grid(row=2, column=0, sticky="e")
+                tk.Label(edit_window, text="Review:").grid(row=3, column=0, sticky="e")
+                tk.Label(edit_window, text="Publisher:").grid(row=4, column=0, sticky="e")
+                tk.Label(edit_window, text="Minimum Property:").grid(row=5, column=0, sticky="e")
+                tk.Label(edit_window, text="Present Stock:").grid(row=6, column=0, sticky="e")
+                tk.Label(edit_window, text="Price:").grid(row=7, column=0, sticky="e")
+                tk.Label(edit_window, text="Publish Year:").grid(row=8, column=0, sticky="e")
+
+                author_entry = tk.Entry(edit_window)
+                author_entry.grid(row=0, column=1)
+                author_entry.insert(tk.END, selected_book[1])
+
+                category_entry = tk.Entry(edit_window)
+                category_entry.grid(row=1, column=1)
+                category_entry.insert(tk.END, selected_book[2])
+
+                title_entry = tk.Entry(edit_window)
+                title_entry.grid(row=2, column=1)
+                title_entry.insert(tk.END, selected_book[3])
+
+                review_entry = tk.Entry(edit_window)
+                review_entry.grid(row=3, column=1)
+                review_entry.insert(tk.END, selected_book[5])
+
+                publisher_entry = tk.Entry(edit_window)
+                publisher_entry.grid(row=4, column=1)
+                publisher_entry.insert(tk.END, selected_book[6])
+
+                min_property_entry = tk.Entry(edit_window)
+                min_property_entry.grid(row=5, column=1)
+                min_property_entry.insert(tk.END, selected_book[7])
+
+                present_stock_entry = tk.Entry(edit_window)
+                present_stock_entry.grid(row=6, column=1)
+                present_stock_entry.insert(tk.END, selected_book[8])
+
+                price_entry = tk.Entry(edit_window)
+                price_entry.grid(row=7, column=1)
+                price_entry.insert(tk.END, selected_book[9])
+
+                publish_year_entry = tk.Entry(edit_window)
+                publish_year_entry.grid(row=8, column=1)
+                publish_year_entry.insert(tk.END, selected_book[10])
+
+                # Button to update book information
+                update_button = tk.Button(edit_window, text="Update", command=update_book_info)
+                update_button.grid(row=9, columnspan=2, pady=10)
+
+        # Bind double-click event to show book details
+        book_listbox.bind("<Double-Button-1>", show_book_to_edit)
+
+        # Create a back button to return to the main admin page
+        back_button = tk.Button(self.root, text="Back", command=self.open_admin_page)
+        back_button.pack(pady=5)
 
     def delete_book(self):
         # Add functionality to delete a book
