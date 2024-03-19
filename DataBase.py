@@ -4,16 +4,16 @@ from datetime import datetime
 # Get the database connection
 mydb, cursor = get_database_connection()
 
-# CREATE DATABASE                                                               #CREATE DATABASE
+# # CREATE DATABASE                                                               #CREATE DATABASE
 # cursor.execute("CREATE DATABASE IF NOT EXISTS Book_Store")
-
-# SHOW DATABASE                                                                  #SHOW DATABASE
+#
+# # SHOW DATABASE                                                                  #SHOW DATABASE
 # cursor.execute("SHOW DATABASES")
 # for db in cursor:
 #     print(db[0])
 
-# CREATE TABLE                                                                  #CREATE TABLE  users
-# SQL statements to create tables
+# # CREATE TABLE                                                                  #CREATE TABLE  users
+# # SQL statements to create tables
 # create_users_table = """
 # CREATE TABLE IF NOT EXISTS users (
 #     user_id INT AUTO_INCREMENT PRIMARY KEY,

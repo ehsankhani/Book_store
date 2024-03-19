@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import messagebox
 from DataBase_Connection import get_database_connection
+# import datetime
+# import traceback
 
 class BookstoreApp:
     def __init__(self, root):
@@ -161,11 +163,12 @@ class BookstoreApp:
         # Check if the user exists and credentials are correct
         # Perform authentication for admin here, using a separate table for admins
         # Replace 'admin_table' with the actual table name for admins
-        self.cursor.execute("SELECT * FROM admin WHERE username = %s AND password = %s", (username, password))
-        admin = self.cursor.fetchone()
-        if admin:
+        self.cursor.execute("SELECT admin_id FROM admin WHERE username = %s AND password = %s", (username, password))
+        admin_id = self.cursor.fetchone()
+        if admin_id:
             # Sign-in successful
             messagebox.showinfo("Success", "Admin sign-in successful!")
+            self.admin_id = admin_id[0]  # Save the admin_id for further use
             self.open_admin_page()
         else:
             # Invalid credentials
@@ -259,7 +262,7 @@ class BookstoreApp:
                 messagebox.showinfo("Book Details",
                                     f"Title: {selected_book[3]}\nAuthor: {selected_book[1]}\nCategory: {selected_book[2]}\nISBN: {selected_book[4]}\nReview: {selected_book[5]}\nPublisher: {selected_book[6]}\nMinimum Property: {selected_book[7]}\nPresent Property: {selected_book[8]}\nPrice: {selected_book[9]}\nPublish Year: {selected_book[10]}")
 
-        # Bind the double-click event to the listbox
+        # Bind the double - click event to the listbox
         book_listbox.bind("<Double-Button-1>", show_book_details)
 
         # Create a back button to return to the main admin page
@@ -325,6 +328,17 @@ class BookstoreApp:
         # Create back button
         self.create_back_button()
 
+    def record_admin_action(self, action_type, book_id=None, description=None):
+        if book_id is None:
+            query = "INSERT INTO admin_records (admin_id, action_type, description) VALUES (%s, %s, %s)"
+            values = (self.admin_id, action_type, description)
+        else:
+            query = "INSERT INTO admin_records (admin_id, action_type, book_id, description) VALUES (%s, %s, %s, %s)"
+            values = (self.admin_id, action_type, book_id, description)
+
+        self.cursor.execute(query, values)
+        self.mydb.commit()
+
     def insert_book(self, author, category, title, isbn, review, publisher, min_property, present_property, price,
                     publish_year):
         try:
@@ -334,9 +348,15 @@ class BookstoreApp:
                 (author, category, title, isbn, review, publisher, min_property, present_property, price, publish_year,
                  1))
             self.mydb.commit()
-
             # Show success message
             messagebox.showinfo("Success", "Book inserted successfully!")
+
+            # Get the new book_id
+            book_id = self.cursor.lastrowid
+
+            # Record admin action
+            self.record_admin_action(action_type='insert', book_id=book_id,
+                                     description="Inserted book: {}".format(title))
         except Exception as e:
             # Show error message if insertion fails
             messagebox.showerror("Error", f"Failed to insert book: {str(e)}")
@@ -381,16 +401,55 @@ class BookstoreApp:
                     new_price = price_entry.get()
                     new_publish_year = publish_year_entry.get()
 
+                    # Query to retrieve the book_id based on other fields (adjust as per your database schema)
+                    self.cursor.execute("""
+                                SELECT book_id, title, author, category, publisher, minimum_property, present_stock, price, publish_year
+                                FROM books 
+                                WHERE title=%s AND author=%s AND category=%s AND publisher=%s
+                            """, (new_title, new_author, new_category, new_publisher))
+                    result = self.cursor.fetchone()
+                    if result:
+                        book_id, old_title, old_author, old_category, old_publisher, old_min_property, old_present_stock, old_price, old_publish_year = result
+                    else:
+                        messagebox.showerror("Error", "Book not found in the database.")
+                        return
+
                     # Update the book information in the database
                     self.cursor.execute("""
-                        UPDATE books 
-                        SET author=%s, category=%s, title=%s, review=%s, publisher=%s, 
-                            minimum_property=%s, present_stock=%s, price=%s, publish_year=%s
-                        WHERE book_id=%s
-                    """, (new_author, new_category, new_title, new_review, new_publisher,
-                          new_min_property, new_present_stock, new_price, new_publish_year, selected_book[0]))
+                                UPDATE books 
+                                SET author=%s, category=%s, title=%s, review=%s, publisher=%s, 
+                                    minimum_property=%s, present_stock=%s, price=%s, publish_year=%s
+                                WHERE book_id=%s
+                            """, (new_author, new_category, new_title, new_review, new_publisher,
+                                  new_min_property, new_present_stock, new_price, new_publish_year, book_id))
                     self.mydb.commit()
                     messagebox.showinfo("Success", "Book information updated successfully.")
+
+                    # Prepare the description for recording admin action
+                    description = "The '{}' book: ".format(old_title)
+                    changes = []
+                    if new_title != old_title:
+                        changes.append("title changed from '{}' to '{}'".format(old_title, new_title))
+                    if new_author != old_author:
+                        changes.append("author changed from '{}' to '{}'".format(old_author, new_author))
+                    if new_category != old_category:
+                        changes.append("category changed from '{}' to '{}'".format(old_category, new_category))
+                    if new_publisher != old_publisher:
+                        changes.append("publisher changed from '{}' to '{}'".format(old_publisher, new_publisher))
+                    if new_min_property != old_min_property:
+                        changes.append(
+                            "minimum property changed from '{}' to '{}'".format(old_min_property, new_min_property))
+                    if new_present_stock != old_present_stock:
+                        changes.append(
+                            "present stock changed from '{}' to '{}'".format(old_present_stock, new_present_stock))
+                    if new_price != old_price:
+                        changes.append("price changed from '{}' to '{}'".format(old_price, new_price))
+                    if new_publish_year != old_publish_year:
+                        changes.append(
+                            "publish year changed from '{}' to '{}'".format(old_publish_year, new_publish_year))
+
+                    description += ", ".join(changes)
+                    self.record_admin_action(action_type='modify', book_id=book_id, description=description)
 
                     # Clear the entry fields
                     author_entry.delete(0, tk.END)
@@ -495,6 +554,14 @@ class BookstoreApp:
                 self.mydb.commit()
                 messagebox.showinfo("Success", "Book deleted from catalog successfully.")
 
+                # Description for the admin action
+                description = f"Book (ID: {selected_book_id}) removed from catalog"
+
+                # Record admin action
+                self.record_admin_action(action_type='remove from catalog', book_id=selected_book_id,
+                                         description=description)
+                self.open_bookstore_management_page()
+
         # Function to delete book from database
         def delete_from_database():
             # Get the index of the selected book in the listbox
@@ -508,11 +575,19 @@ class BookstoreApp:
                 self.mydb.commit()
                 messagebox.showinfo("Success", "Book deleted from database successfully.")
 
+                # Description for the admin action
+                description = f"Book (ID: {selected_book_id}) removed from database"
+
+                # Record admin action with description
+                self.record_admin_action(action_type='remove from database', book_id=selected_book_id,
+                                         description=description)
+                self.open_bookstore_management_page()
+
         # Create buttons for deletion options
-        delete_catalog_button = tk.Button(self.root, text="Delete from Catalog", command=delete_from_catalog)
+        delete_catalog_button = tk.Button(self.root, text="Remove from Catalog", command=delete_from_catalog)
         delete_catalog_button.pack(padx=10, pady=5)
 
-        delete_database_button = tk.Button(self.root, text="Delete from Database", command=delete_from_database)
+        delete_database_button = tk.Button(self.root, text="Remove from Database", command=delete_from_database)
         delete_database_button.pack(padx=10, pady=5)
 
         # Create a back button to return to the book store management page
@@ -706,7 +781,7 @@ class BookstoreApp:
         self.clear_window()
 
         # Get message box content from the database
-        self.cursor.execute("SELECT msg_box FROM users WHERE username = %s", (self.logged_in_username,))
+        self.cursor.execute("SELECT inbox FROM users WHERE username = %s", (self.logged_in_username,))
         message_box_content = self.cursor.fetchone()
 
         # Display message box content in a dialog box
