@@ -11,6 +11,7 @@ class BookstoreApp:
         self.is_logged_in = False
         self.logged_in_username = None
         self.is_admin = False  # Flag to indicate admin login status
+        self.manager_id = None
 
         # Get the database connection
         self.mydb, self.cursor = get_database_connection()
@@ -212,9 +213,13 @@ class BookstoreApp:
         list_books_button = tk.Button(self.root, text="List of the Books", command=self.show_book_list)
         list_books_button.grid(row=1, column=1, padx=10, pady=5)
 
+        # Create a button for accessing the inbox
+        inbox_button = tk.Button(self.root, text="Inbox", command=self.open_admin_inbox)
+        inbox_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+
         # Create a back button
         back_button = tk.Button(self.root, text="Back", command=self.go_back)
-        back_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+        back_button.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
 
     def open_bookstore_management_page(self):
         # Clear the window and create the page for managing the bookstore
@@ -233,6 +238,30 @@ class BookstoreApp:
 
         back_button = tk.Button(self.root, text="Back", command=self.open_admin_page)
         back_button.grid(row=2, column=1, padx=10, pady=5)
+
+    def open_admin_inbox(self):
+        # Clear the window
+        self.clear_window()
+
+        # Retrieve messages from the admin's inbox
+        self.cursor.execute("SELECT msg_box FROM admin WHERE admin_id = %s", (self.admin_id,))
+        messages = self.cursor.fetchall()
+
+        # Display the messages in a new window or dialog box
+        inbox_window = tk.Toplevel(self.root)
+        inbox_window.title("Inbox")
+
+        # Create a text widget to display the messages
+        inbox_text = tk.Text(inbox_window, height=20, width=50)
+        inbox_text.pack(padx=10, pady=10)
+
+        # Insert each message into the text widget
+        for message in messages:
+            inbox_text.insert(tk.END, message[0] + '\n')
+
+        # Create a back button to return to the admin page
+        back_button = tk.Button(inbox_window, text="Back", command=self.open_admin_page)
+        back_button.pack(pady=10)
 
     def show_book_list(self):
         # Clear the current window
@@ -597,9 +626,53 @@ class BookstoreApp:
     def open_manager_page(self):
         # Clear the window and create the manager page
         self.clear_window()
-        tk.Label(self.root, text="Welcome Manager", fg="green").pack()
+        tk.Label(self.root, text="Welcome Manager", fg="green").grid(row=0, column=0, columnspan=2)
+
         # Add manager-specific GUI elements here
         # For example, buttons to perform manager actions
+        inbox_button = tk.Button(self.root, text="Inbox", command=self.open_manager_inbox)
+        inbox_button.grid(row=1, column=0, padx=10, pady=5)
+
+        logout_button = tk.Button(self.root, text="Logout", command=self.create_main_page)
+        logout_button.grid(row=1, column=1, padx=10, pady=5)
+
+    def open_manager_inbox(self):
+        # Clear the window
+        self.clear_window()
+
+        # Retrieve messages from the manager's inbox
+        self.cursor.execute("SELECT msg_box FROM manager WHERE manager_id = %s", (self.manager_id,))
+        inbox_messages = self.cursor.fetchall()
+
+        # Display the messages in a listbox or text widget
+        if inbox_messages:
+            # Create a text widget to display the messages
+            inbox_text = tk.Text(self.root)
+            inbox_text.pack(fill="both", expand=True, padx=10, pady=10)
+
+            # Insert each message into the text widget
+            for msg in inbox_messages:
+                inbox_text.insert(tk.END, msg[0] + "\n")
+
+            # Disable text widget editing
+            inbox_text.configure(state="disabled")
+        else:
+            # If there are no messages, display a message indicating so
+            tk.Label(self.root, text="No messages in the inbox", fg="red").pack(pady=10)
+
+        # Create a back button to return to the manager page
+        back_button = tk.Button(self.root, text="Back", command=self.open_manager_page)
+        back_button.pack(pady=10)
+
+    def get_manager_id(self, username):
+        # Query to retrieve manager ID based on username
+        query = "SELECT manager_id FROM manager WHERE full_name = %s"
+        self.cursor.execute(query, (username,))
+        result = self.cursor.fetchone()
+        if result:
+            self.manager_id = result[0]
+        else:
+            messagebox.showerror("Error", "Manager not found")
 
     def create_back_button(self):
         # Create back button to navigate to the last page
