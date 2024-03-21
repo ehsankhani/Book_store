@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import messagebox
 from DataBase_Connection import get_database_connection
+import mysql.connector
 # import datetime
 # import traceback
 
@@ -213,13 +214,91 @@ class BookstoreApp:
         list_books_button = tk.Button(self.root, text="List of the Books", command=self.show_book_list)
         list_books_button.grid(row=1, column=1, padx=10, pady=5)
 
+        # Create a button for placing orders
+        place_orders_button = tk.Button(self.root, text="Place Orders", command=self.open_place_orders_window)
+        place_orders_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+
         # Create a button for accessing the inbox
         inbox_button = tk.Button(self.root, text="Inbox", command=self.open_admin_inbox)
-        inbox_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+        inbox_button.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
 
         # Create a back button
         back_button = tk.Button(self.root, text="Back", command=self.go_back)
-        back_button.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
+        back_button.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
+
+    def open_place_orders_window(self):
+        # Create a new window for placing orders
+        place_orders_window = tk.Toplevel(self.root)
+        place_orders_window.title("Place Orders")
+
+        # Retrieve the list of books from the database
+        self.cursor.execute("SELECT book_id, title, present_stock, minimum_property FROM books")
+        books_data = self.cursor.fetchall()
+
+        # Create labels to display book details
+        tk.Label(place_orders_window, text="Select a Book:").grid(row=0, column=0, padx=10, pady=5)
+        book_listbox = tk.Listbox(place_orders_window, width=50, height=10)
+        book_listbox.grid(row=1, column=0, padx=10, pady=5)
+
+        # Populate the listbox with book titles
+        for book in books_data:
+            book_listbox.insert(tk.END, f"{book[1]} (ID: {book[0]})")
+
+        def show_book_details():
+            # Get the selected book index
+            selected_index = book_listbox.curselection()
+            if selected_index:
+                index = int(selected_index[0])
+                selected_book = books_data[index]
+
+                # Display book details
+                tk.Label(place_orders_window, text=f"Quantity: {selected_book[2]}").grid(row=2, column=0, padx=10,
+                                                                                         pady=5)
+                tk.Label(place_orders_window, text=f"Minimum Property: {selected_book[3]}").grid(row=3, column=0,
+                                                                                                 padx=10, pady=5)
+
+                # Entry field for the new quantity to order
+                new_quantity_entry = tk.Entry(place_orders_window)
+                new_quantity_entry.grid(row=4, column=0, padx=10, pady=5)
+
+                # Create the confirm button and pass it to the place_order function
+                confirm_button = tk.Button(place_orders_window, text="Place Order",
+                                           command=lambda: self.place_order(new_quantity_entry, selected_book,
+                                                                            confirm_button))
+                confirm_button.grid(row=5, column=0, padx=10, pady=5)
+
+        # Button to show book details
+        show_details_button = tk.Button(place_orders_window, text="Show Details", command=show_book_details)
+        show_details_button.grid(row=1, column=1, padx=10, pady=5)
+
+    def place_order(self, new_quantity_entry, selected_book, confirm_button):
+        # Disable the "Place Order" button to prevent multiple clicks
+        confirm_button.config(state="disabled")
+
+        # Get the new quantity to order
+        new_quantity = new_quantity_entry.get()
+
+        # Check for the present manager with date_out = NULL
+        present_manager_query = "SELECT manager_id FROM manager WHERE date_out IS NULL"
+        self.cursor.execute(present_manager_query)
+        present_manager = self.cursor.fetchone()
+
+        if present_manager:
+            # Implement logic to send order to the present manager with new quantity
+            message = f"New order for book ID {selected_book[0]}: Quantity - {new_quantity}"
+
+            # Insert the message into the present manager's message box
+            update_query = "UPDATE manager SET msg_box = %s WHERE manager_id = %s AND date_out IS NULL"
+            self.cursor.execute(update_query, (message, present_manager[0]))
+            self.mydb.commit()  # Commit the transaction
+            self.refresh_database_connection()
+            # Inform the admin that the order has been placed successfully
+            messagebox.showinfo("Success", "Order sent to manager successfully. Waiting for response...")
+        else:
+            messagebox.showerror("Error", "No active manager found.")
+
+        # Re-enable the "Place Order" button for subsequent orders
+        confirm_button.config(state="normal")
 
     def open_bookstore_management_page(self):
         # Clear the window and create the page for managing the bookstore
@@ -640,6 +719,12 @@ class BookstoreApp:
         # Clear the window
         self.clear_window()
 
+        # Refresh the database connection
+        self.refresh_database_connection()
+
+        # Retrieve the present manager ID
+        self.get_present_manager_id()
+
         # Retrieve messages from the manager's inbox
         self.cursor.execute("SELECT msg_box FROM manager WHERE manager_id = %s", (self.manager_id,))
         inbox_messages = self.cursor.fetchall()
@@ -664,10 +749,31 @@ class BookstoreApp:
         back_button = tk.Button(self.root, text="Back", command=self.open_manager_page)
         back_button.pack(pady=10)
 
-    def get_manager_id(self, username):
+    def refresh_database_connection(self):
+        try:
+            # Commit any pending changes
+            self.mydb.commit()
+        except mysql.connector.Error as err:
+            print("Error committing changes:", err)
+            # Rollback changes if there's an error
+            self.mydb.rollback()
+
+        # Close the current cursor
+        self.cursor.close()
+
+        # Reopen the database connection and cursor
+        self.mydb = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="ehsan",
+            database="Book_Store"
+        )
+        self.cursor = self.mydb.cursor()
+
+    def get_present_manager_id(self):
         # Query to retrieve manager ID based on username
-        query = "SELECT manager_id FROM manager WHERE full_name = %s"
-        self.cursor.execute(query, (username,))
+        query = "SELECT manager_id FROM manager WHERE date_out IS NULL "
+        self.cursor.execute(query)
         result = self.cursor.fetchone()
         if result:
             self.manager_id = result[0]
