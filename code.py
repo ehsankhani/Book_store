@@ -333,19 +333,60 @@ class BookstoreApp:
 
         # Retrieve messages from the admin's inbox
         self.cursor.execute("SELECT msg_box FROM admin WHERE admin_id = %s", (self.admin_id,))
-        messages = self.cursor.fetchall()
+        messages = self.cursor.fetchone()  # Retrieve only one row
 
-        # Display the messages in a new window or dialog box
+        # Create a new window for displaying inbox messages
         inbox_window = tk.Toplevel(self.root)
-        inbox_window.title("Inbox")
+        inbox_window.title("Admin Inbox")
 
-        # Create a text widget to display the messages
-        inbox_text = tk.Text(inbox_window, height=20, width=50)
-        inbox_text.pack(padx=10, pady=10)
+        # Create a listbox to display message subjects
+        message_listbox = tk.Listbox(inbox_window, width=50, height=10)
+        message_listbox.pack(fill="both", expand=True, padx=10, pady=10)
 
-        # Insert each message into the text widget
-        for message in messages:
-            inbox_text.insert(tk.END, message[0] + '\n')
+        if messages:
+            # Split messages by comma to separate them
+            msg_parts = messages[0].split(',')
+            for msg in msg_parts:
+                # Extract subject (order for book ID)
+                subject = msg.split(":")[0].strip()
+                message_listbox.insert(tk.END, subject)
+
+            # Function to display full message on selection
+            def show_full_message(event):
+                # Get the index of the selected item
+                index = message_listbox.curselection()[0]
+
+                # Create a new window to display the full message
+                full_message_window = tk.Toplevel(inbox_window)
+                full_message_window.title("Full Message")
+
+                # Retrieve and display the full message
+                full_message = msg_parts[index].strip()
+                full_message_text = tk.Text(full_message_window, height=10, width=50)
+                full_message_text.insert(tk.END, full_message)
+                full_message_text.pack(fill="both", expand=True, padx=10, pady=10)
+                full_message_text.configure(state="disabled")
+
+                # Function to delete the message
+                def delete_message():
+                    # Delete the selected message from the database
+                    updated_messages = [msg for i, msg in enumerate(msg_parts) if i != index]
+                    updated_msg_string = ','.join(updated_messages)
+                    update_query = "UPDATE admin SET msg_box = %s WHERE admin_id = %s"
+                    self.cursor.execute(update_query, (updated_msg_string, self.admin_id))
+                    self.mydb.commit()  # Commit the transaction
+                    full_message_window.destroy()  # Close the full message window
+                    messagebox.showinfo("Delete", "Message deleted successfully")
+
+                # Create a button to delete the message
+                delete_button = tk.Button(full_message_window, text="Delete", command=delete_message)
+                delete_button.pack(pady=10)
+
+            # Bind the show_full_message function to listbox selection
+            message_listbox.bind("<<ListboxSelect>>", show_full_message)
+        else:
+            # If there are no messages, display a message indicating so
+            tk.Label(inbox_window, text="No messages in the inbox", fg="red").pack(pady=10)
 
         # Create a back button to return to the admin page
         back_button = tk.Button(inbox_window, text="Back", command=self.open_admin_page)
@@ -748,8 +789,12 @@ class BookstoreApp:
 
             # Populate the listbox with message subjects (without quantity)
             for msg in messages:
-                subject = msg.split(":")[1].strip()  # Extract subject without quantity
-                message_listbox.insert(tk.END, subject)
+                parts = msg.split(":")
+                if len(parts) >= 2:
+                    subject = parts[1].strip()  # Extract subject without quantity
+                    message_listbox.insert(tk.END, subject)
+                else:
+                    message_listbox.insert(tk.END, msg)  # Insert the whole message
 
             # Function to display full message on selection
             def show_full_message(event):
@@ -808,15 +853,65 @@ class BookstoreApp:
 
                 # Function to handle declining the message
                 def decline_message():
-                    # Logic to decline the message
-                    # For example, you can implement database updates here
-                    messagebox.showinfo("Decline", "Message declined successfully")
+                    # Get the index of the selected item
+                    index = message_listbox.curselection()[0]
+
+                    # Get the full message
+                    full_message = messages[index].strip()
+
+                    # Display the full message in a messagebox
+                    response = messagebox.askyesno("Decline",
+                                                   f"Are you sure you want to decline the following order?\n\n{full_message}")
+
+                    if response:
+                        try:
+                            # Get the ID of the active admin
+                            active_admin_query = "SELECT admin_id FROM admin WHERE is_active = 1"
+                            self.cursor.execute(active_admin_query)
+                            active_admin_id = self.cursor.fetchone()[0]
+
+                            # Insert a new message into the active admin' s message box
+                            admin_message = f"Order declined: {full_message}"
+                            insert_query = "UPDATE admin SET msg_box = CONCAT(msg_box, %s) WHERE admin_id = %s"
+                            self.cursor.execute(insert_query, (f", {admin_message}", active_admin_id))
+                            self.mydb.commit()
+
+                            # Show success message
+                            messagebox.showinfo("Success", "Order declined successfully. Message sent to admin.")
+                        except mysql.connector.Error as err:
+                            # Handle any errors
+                            print("Error:", err)
+                            messagebox.showerror("Error", "Failed to decline the order.")
 
                 # Function to handle deleting the message
                 def delete_message():
-                    # Logic to delete the message
-                    # For example, you can implement database updates here
-                    messagebox.showinfo("Delete", "Message deleted successfully")
+                    try:
+                        # Get the index of the selected item
+                        index = message_listbox.curselection()[0]
+
+                        # Retrieve the current messages from the manager's message box
+                        self.cursor.execute("SELECT msg_box FROM manager WHERE manager_id = %s", (self.manager_id,))
+                        manager_messages = self.cursor.fetchone()[0]
+                        messages = manager_messages.split(',')
+
+                        # Remove the selected message from the list of messages
+                        updated_messages = [msg for i, msg in enumerate(messages) if i != index]
+
+                        # Update the manager's message box with the remaining messages
+                        updated_msg_string = ','.join(updated_messages)
+                        update_query = "UPDATE manager SET msg_box = %s WHERE manager_id = %s"
+                        self.cursor.execute(update_query, (updated_msg_string, self.manager_id))
+                        self.mydb.commit()
+
+                        # Show success message
+                        messagebox.showinfo("Delete", "Message deleted successfully")
+
+                        # Refresh the inbox to reflect changes
+                        self.open_manager_inbox()
+                    except Exception as e:
+                        # Handle any errors
+                        print("Error:", e)
+                        messagebox.showerror("Error", "Failed to delete the message")
 
                 # Create buttons for accept, decline, and delete
                 accept_button = tk.Button(full_message_window, text="Accept", command=accept_message)
@@ -828,7 +923,7 @@ class BookstoreApp:
                 delete_button = tk.Button(full_message_window, text="Delete", command=delete_message)
                 delete_button.pack(side="left", padx=5, pady=5)
 
-            # Bind the show_full_message function to double click event on message listbox
+            # Bind the show_full_message function to double-click event on message listbox
             message_listbox.bind("<Double-Button-1>", show_full_message)
         else:
             # If there are no messages, display a message indicating so
