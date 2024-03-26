@@ -813,24 +813,103 @@ class BookstoreApp:
                 full_message_text.configure(state="disabled")
 
                 # Function to handle accepting the message
+                def open_additional_info_window(parent):
+                    additional_info = None
+
+                    def submit_info():
+                        nonlocal additional_info
+                        additional_info = info_entry.get()
+                        window.destroy()
+
+                    window = tk.Toplevel(parent)
+                    window.title("Additional Information")
+
+                    info_label = tk.Label(window, text="Enter additional information:")
+                    info_label.pack(pady=10)
+
+                    info_entry = tk.Entry(window, width=40)
+                    info_entry.pack(pady=5)
+
+                    submit_button = tk.Button(window, text="Submit", command=submit_info)
+                    submit_button.pack(pady=5)
+
+                    window.wait_window()  # Wait for the window to be closed before continuing
+
+                    return additional_info
+
+                # Now you can use this function in your accept_message and decline_message functions like this:
+
+                # Function to handle accepting the message
                 def accept_message():
-
-                    self.refresh_database_connection()
-                    # Get the index of the selected item
-                    index = message_listbox.curselection()[0]
-
-                    # Get the full message
-                    full_message = messages[index].strip()
-
-                    # Parse the message to extract book ID and quantity
-                    parts = full_message.split(":")
-                    book_id = int(parts[0].split()[-1])
-                    quantity = int(parts[1].split()[-1])
-
                     try:
-                        # Update the quantity of the book in the database
-                        update_query = "UPDATE books SET present_stock = %s WHERE book_id = %s"
-                        self.cursor.execute(update_query, (quantity, book_id))
+                        # Get the index of the selected item
+                        index = message_listbox.curselection()[0]
+
+                        # Get the full message
+                        full_message = messages[index].strip()
+
+                        # Parse the message to extract book ID and quantity
+                        parts = full_message.split(":")
+                        book_id = int(parts[0].split()[-1])
+                        quantity = int(parts[1].split()[-1])
+
+                        # Open a new window for additional information input
+                        additional_info = open_additional_info_window(self.root)
+
+                        try:
+                            # Update the quantity of the book in the database
+                            update_query = "UPDATE books SET present_stock = %s WHERE book_id = %s"
+                            self.cursor.execute(update_query, (quantity, book_id))
+                            self.mydb.commit()
+
+                            # Insert a record into manager_record table for accepting the order
+                            insert_record_query = "INSERT INTO manager_records (manager_id, description, orders_to_add, timestamp) VALUES (%s, %s, %s, NOW())"
+                            description = f"Accepted order: Book ID {book_id}. Quantity changed to {quantity}. Additional info: {additional_info}"
+                            self.cursor.execute(insert_record_query,
+                                                (self.manager_id, description, f"Accepted for Book ID {book_id}"))
+                            self.mydb.commit()
+
+                            # Get the ID of the active admin
+                            active_admin_query = "SELECT admin_id FROM admin WHERE is_active = 1"
+                            self.cursor.execute(active_admin_query)
+                            active_admin_id = self.cursor.fetchone()[0]
+
+                            # Insert a new message into the active admin's message box
+                            admin_message = f"Order for book ID {book_id} accepted. Quantity updated."
+                            insert_query = "UPDATE admin SET msg_box = CONCAT(msg_box, %s) WHERE admin_id = %s"
+                            self.cursor.execute(insert_query, (f", {admin_message}", active_admin_id))
+                            self.mydb.commit()
+
+                            # Show success message
+                            messagebox.showinfo("Success", "Order accepted. Quantity updated.")
+                        except mysql.connector.Error as err:
+                            # Handle any errors
+                            print("Error:", err)
+                            messagebox.showerror("Error", "Failed to accept the order.")
+                    except Exception as e:
+                        print("Error:", e)
+
+                # Function to handle declining the message
+                def decline_message():
+                    try:
+                        # Get the index of the selected item
+                        index = message_listbox.curselection()[0]
+
+                        # Get the full message
+                        full_message = messages[index].strip()
+
+                        # Open a new window for additional information input
+                        additional_info = open_additional_info_window(self.root)
+
+                        # Parse the message to extract book ID and quantity
+                        parts = full_message.split(":")
+                        book_id = int(parts[0].split()[-1])
+
+                        # Insert a record into manager_record table for declining the order
+                        insert_record_query = "INSERT INTO manager_records (manager_id, description, orders_to_add, timestamp) VALUES (%s, %s, %s, NOW())"
+                        description = f"Declined order: {full_message}. Additional info: {additional_info}"
+                        self.cursor.execute(insert_record_query,
+                                            (self.manager_id, description, f"Declined for Book ID {book_id}"))
                         self.mydb.commit()
 
                         # Get the ID of the active admin
@@ -838,50 +917,17 @@ class BookstoreApp:
                         self.cursor.execute(active_admin_query)
                         active_admin_id = self.cursor.fetchone()[0]
 
-                        # Insert a new message into the active admin's message box
-                        admin_message = f"Order for book ID {book_id} accepted. Quantity updated."
+                        # Insert a new message into the active admin' s message box
+                        admin_message = f"Order declined: {full_message}"
                         insert_query = "UPDATE admin SET msg_box = CONCAT(msg_box, %s) WHERE admin_id = %s"
                         self.cursor.execute(insert_query, (f", {admin_message}", active_admin_id))
                         self.mydb.commit()
 
                         # Show success message
-                        messagebox.showinfo("Success", "Order accepted. Quantity updated.")
-                    except mysql.connector.Error as err:
-                        # Handle any errors
-                        print("Error:", err)
-                        messagebox.showerror("Error", "Failed to accept the order.")
-
-                # Function to handle declining the message
-                def decline_message():
-                    # Get the index of the selected item
-                    index = message_listbox.curselection()[0]
-
-                    # Get the full message
-                    full_message = messages[index].strip()
-
-                    # Display the full message in a messagebox
-                    response = messagebox.askyesno("Decline",
-                                                   f"Are you sure you want to decline the following order?\n\n{full_message}")
-
-                    if response:
-                        try:
-                            # Get the ID of the active admin
-                            active_admin_query = "SELECT admin_id FROM admin WHERE is_active = 1"
-                            self.cursor.execute(active_admin_query)
-                            active_admin_id = self.cursor.fetchone()[0]
-
-                            # Insert a new message into the active admin' s message box
-                            admin_message = f"Order declined: {full_message}"
-                            insert_query = "UPDATE admin SET msg_box = CONCAT(msg_box, %s) WHERE admin_id = %s"
-                            self.cursor.execute(insert_query, (f", {admin_message}", active_admin_id))
-                            self.mydb.commit()
-
-                            # Show success message
-                            messagebox.showinfo("Success", "Order declined successfully. Message sent to admin.")
-                        except mysql.connector.Error as err:
-                            # Handle any errors
-                            print("Error:", err)
-                            messagebox.showerror("Error", "Failed to decline the order.")
+                        messagebox.showinfo("Success", "Order declined successfully. Message sent to admin.")
+                    except Exception as e:
+                        print("Error:", e)
+                        messagebox.showerror("Error", "Failed to decline the order.")
 
                 # Function to handle deleting the message
                 def delete_message():

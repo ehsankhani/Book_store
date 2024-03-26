@@ -231,11 +231,11 @@ mydb, cursor = get_database_connection()
 # # Commit the transaction
 # mydb.commit()
 #
-# SQL command to drop the column
-drop_column_query = "ALTER TABLE manager DROP COLUMN book_oprations"
-
-# Executing the SQL command to drop the column
-cursor.execute(drop_column_query)
-
-# Committing the changes
-mydb.commit()
+# # SQL command to drop the column
+# drop_column_query = "ALTER TABLE manager DROP COLUMN book_oprations"
+#
+# # Executing the SQL command to drop the column
+# cursor.execute(drop_column_query)
+#
+# # Committing the changes
+# mydb.commit()
