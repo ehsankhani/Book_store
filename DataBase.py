@@ -200,5 +200,42 @@ mydb, cursor = get_database_connection()
 # mydb.commit()
 
 # -- Add a new column 'password' to the 'manager' table
+#############################################################################
+# #add column is_active
+# # SQL command to add the column
+# add_column_query = "UPDATE admin SET is_active = 1 WHERE admin_id = 1"
+#
+# # Executing the SQL command to add the column
+# cursor.execute(add_column_query)
+#
+# # Committing the changes
+# mydb.commit()
+## CREATE TABLE MANAGER RECORDS MAN                                            # CREATE TABLE MANAGER RECORDS
+# SQL query to create the manager_records table
+# create_table_query = """
+#             CREATE TABLE manager_records (
+#                 record_id INT AUTO_INCREMENT PRIMARY KEY,
+#                 manager_id INT,
+#                 allowed_purchases BOOLEAN,
+#                 orders_to_add TEXT,
+#                 book_operations TEXT,
+#                 timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+#                 description TEXT,
+#                 FOREIGN KEY (manager_id) REFERENCES manager(manager_id)
+#             )
+#         """
+#
+# # Execute the SQL query to create the table
+# cursor.execute(create_table_query)
+#
+# # Commit the transaction
+# mydb.commit()
+#
+# SQL command to drop the column
+drop_column_query = "ALTER TABLE manager DROP COLUMN book_oprations"
 
+# Executing the SQL command to drop the column
+cursor.execute(drop_column_query)
 
+# Committing the changes
+mydb.commit()
