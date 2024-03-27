@@ -3,6 +3,7 @@ from tkinter import messagebox,scrolledtext
 from DataBase_Connection import get_database_connection
 import mysql.connector
 import datetime
+from decimal import Decimal
 # import traceback
 
 class BookstoreApp:
@@ -771,47 +772,46 @@ class BookstoreApp:
 
     def open_book_operations(self):
         # Function to handle insert operation
+        def get_manager_id():
+            try:
+                # Execute a query to retrieve the manager ID where date_out is NULL
+                get_manager_query = "SELECT manager_id FROM manager WHERE date_out IS NULL"
+                self.cursor.execute(get_manager_query)
+                manager_id = self.cursor.fetchone()[0]  # Assuming there's only one manager with date_out NULL
+                return manager_id
+            except Exception as e:
+                # Handle any exceptions (e.g., database connection error, no manager found)
+                print("Error retrieving manager ID:", e)
+                return None  # Return None if manager ID retrieval fails
 
+        def open_additional_info_window():
+            # Function to create a window for entering additional information
+
+            # Function to handle saving the entered information
+            def save_info():
+                additional_info = info_text.get("1.0", tk.END)  # Retrieve the entered text
+                additional_info_window.description = additional_info  # Store the entered text in the window object
+                additional_info_window.destroy()  # Close the window
+
+            # Create a new window for entering additional information
+            additional_info_window = tk.Toplevel()
+            additional_info_window.title("Additional Information")
+
+            # Create a scrolled text box for entering information
+            info_text = scrolledtext.ScrolledText(additional_info_window, width=40, height=10)
+            info_text.pack(padx=10, pady=10)
+
+            # Create a button to save the entered information
+            save_button = tk.Button(additional_info_window, text="Save", command=save_info)
+            save_button.pack(pady=5)
+
+            # Make the window wait until it is closed
+            additional_info_window.wait_window(additional_info_window)
+
+            # Return the entered text when the window is closed
+            return additional_info_window.description if hasattr(additional_info_window, 'description') else ""
         def insert_book():
             # Function to handle the insertion of a book
-            def get_manager_id():
-                try:
-                    # Execute a query to retrieve the manager ID where date_out is NULL
-                    get_manager_query = "SELECT manager_id FROM manager WHERE date_out IS NULL"
-                    self.cursor.execute(get_manager_query)
-                    manager_id = self.cursor.fetchone()[0]  # Assuming there's only one manager with date_out NULL
-                    return manager_id
-                except Exception as e:
-                    # Handle any exceptions (e.g., database connection error, no manager found)
-                    print("Error retrieving manager ID:", e)
-                    return None  # Return None if manager ID retrieval fails
-
-            def open_additional_info_window():
-                # Function to create a window for entering additional information
-
-                # Function to handle saving the entered information
-                def save_info():
-                    additional_info = info_text.get("1.0", tk.END)  # Retrieve the entered text
-                    additional_info_window.description = additional_info  # Store the entered text in the window object
-                    additional_info_window.destroy()  # Close the window
-
-                # Create a new window for entering additional information
-                additional_info_window = tk.Toplevel()
-                additional_info_window.title("Additional Information")
-
-                # Create a scrolled text box for entering information
-                info_text = scrolledtext.ScrolledText(additional_info_window, width=40, height=10)
-                info_text.pack(padx=10, pady=10)
-
-                # Create a button to save the entered information
-                save_button = tk.Button(additional_info_window, text="Save", command=save_info)
-                save_button.pack(pady=5)
-
-                # Make the window wait until it is closed
-                additional_info_window.wait_window(additional_info_window)
-
-                # Return the entered text when the window is closed
-                return additional_info_window.description if hasattr(additional_info_window, 'description') else ""
 
             def go_back_to_operations():
                 # Open the book operations page
@@ -914,8 +914,233 @@ class BookstoreApp:
 
         # Function to handle modify operation
         def modify_book():
-            # Define the functionality for modifying a book here
-            pass
+            self.refresh_database_connection()
+            # Declare entry fields and category variable as global
+            global author_entry, category_var, title_entry, isbn_entry, review_entry
+            global publisher_entry, minimum_property_entry, present_stock_entry, price_entry, publish_year_entry
+
+            def get_all_books():
+                try:
+                    # Execute query to retrieve all books
+                    self.cursor.execute("SELECT * FROM books")
+                    return self.cursor.fetchall()
+                except mysql.connector.Error as err:
+                    print("Error:", err)
+                    return []
+
+            def populate_book_list():
+                books = get_all_books()
+                for book in books:
+                    book_listbox.insert(tk.END, f"{book[0]} - {book[2]}")  # Book ID and Title
+
+            def select_book(event):
+                # Get the selected book's ID
+                selected_index = book_listbox.curselection()
+                if selected_index:
+                    selected_book_id = book_listbox.get(selected_index)[0]  # Extract book ID
+                    populate_book_details(selected_book_id)
+
+            def populate_book_details(book_id):
+                try:
+                    # Execute query to retrieve book details by ID
+                    self.cursor.execute("SELECT * FROM books WHERE book_id = %s", (book_id,))
+                    book_details = self.cursor.fetchone()
+
+                    if book_details:
+                        # Initialize a dictionary to store the changes
+                        changes = {}
+
+                        # Define the index mappings for each field in the book_details tuple
+                        field_indices = {
+                            'author': 1,
+                            'category': 2,
+                            'title': 3,
+                            'isbn': 4,
+                            'review': 5,
+                            'publisher': 6,
+                            'minimum_property': 7,
+                            'present_stock': 8,
+                            'price': 9,
+                            'publish_year': 10
+                        }
+
+                        # Get the old values directly from the entry widgets
+                        old_values = {
+                            'author': author_entry.get(),
+                            'category': category_var.get(),
+                            'title': title_entry.get(),
+                            'isbn': isbn_entry.get(),
+                            'review': review_entry.get(),
+                            'publisher': publisher_entry.get(),
+                            'minimum_property': minimum_property_entry.get(),
+                            'present_stock': present_stock_entry.get(),
+                            'price': price_entry.get(),
+                            'publish_year': publish_year_entry.get()
+                        }
+
+                        # Update entry fields with book details
+                        author_entry.delete(0, tk.END)
+                        author_entry.insert(tk.END, book_details[1])
+                        category_var.set(book_details[2])
+                        title_entry.delete(0, tk.END)
+                        title_entry.insert(tk.END, book_details[3])
+                        isbn_entry.delete(0, tk.END)
+                        isbn_entry.insert(tk.END, book_details[4])
+                        review_entry.delete(0, tk.END)
+                        review_entry.insert(tk.END, book_details[5])
+                        publisher_entry.delete(0, tk.END)
+                        publisher_entry.insert(tk.END, book_details[6])
+                        minimum_property_entry.delete(0, tk.END)
+                        minimum_property_entry.insert(tk.END, book_details[7])
+
+                        # Check if present_stock_entry is not empty before inserting value
+                        present_stock_value = book_details[8] if book_details[8] else 0
+                        present_stock_entry.delete(0, tk.END)
+                        present_stock_entry.insert(tk.END, present_stock_value)
+
+                        price_entry.delete(0, tk.END)
+                        price_entry.insert(tk.END, book_details[9])
+                        publish_year_entry.delete(0, tk.END)
+                        publish_year_entry.insert(tk.END, book_details[10])
+
+                        # Track changes and store old values
+                        for field, index in field_indices.items():
+                            old_value = old_values[field]
+                            new_value = book_details[index]
+                            print(f"Field: {field}, Old Value: {old_value}, New Value: {new_value}")
+                            if field == 'price':
+                                old_value = Decimal(old_value) if old_value else Decimal(0)
+                                new_value = Decimal(new_value)
+                            if old_value != new_value:
+                                changes[field] = (old_value, new_value)
+                    else:
+                        print("No book found with the provided ID.")
+                        return None
+                except mysql.connector.Error as err:
+                    print("Error:", err)
+                    return None
+
+            def save_changes():
+                # Get the modified information
+                author = author_entry.get()
+                category = category_var.get()
+                title = title_entry.get()
+                isbn = isbn_entry.get()
+                review = review_entry.get()
+                publisher = publisher_entry.get()
+                minimum_property = minimum_property_entry.get()
+                present_stock = present_stock_entry.get()
+                price = price_entry.get()
+                publish_year = publish_year_entry.get()
+
+                try:
+                    # Get the selected book's ID
+                    selected_index = book_listbox.curselection()
+                    if selected_index:
+                        selected_book_id = book_listbox.get(selected_index)[0]
+
+                        # Update the book in the database
+                        update_query = "UPDATE books SET author = %s, category = %s, title = %s, isbn = %s, review = %s, publisher = %s, minimum_property = %s, present_stock = %s, price = %s, publish_year = %s WHERE book_id = %s"
+                        self.cursor.execute(update_query, (
+                            author, category, title, isbn, review, publisher, minimum_property, present_stock, price,
+                            publish_year, selected_book_id))
+                        self.mydb.commit()
+                        messagebox.showinfo("Success", "Book details updated successfully.")
+
+                        # Record the book modification in manager_records
+                        manager_id = get_manager_id()
+                        operation = "Modify"
+                        timestamp = datetime.datetime.now()
+                        description = open_additional_info_window()
+                        insert_record_query = "INSERT INTO manager_records (manager_id, book_operations, timestamp, description) VALUES (%s, %s, %s, %s)"
+                        self.cursor.execute(insert_record_query, (manager_id, operation, timestamp, description))
+                        self.mydb.commit()
+
+                        # Clear the entry fields
+                        clear_entry_fields()
+                    else:
+                        messagebox.showwarning("Warning", "No book selected.")
+                except mysql.connector.Error as err:
+                    print("Error:", err)
+
+            def clear_entry_fields():
+                # Clear all entry fields
+                author_entry.delete(0, tk.END)
+                category_var.set("")
+                title_entry.delete(0, tk.END)
+                isbn_entry.delete(0, tk.END)
+                review_entry.delete(0, tk.END)
+                publisher_entry.delete(0, tk.END)
+                minimum_property_entry.delete(0, tk.END)
+                present_stock_entry.delete(0, tk.END)
+                price_entry.delete(0, tk.END)
+                publish_year_entry.delete(0, tk.END)
+
+            def go_back_to_operations():
+                # Open the book operations page
+                self.clear_window()
+                self.open_book_operations()
+
+            # Clear the current page
+            self.clear_window()
+
+            # Create a listbox to display all books
+            book_listbox = tk.Listbox(self.root, width=50, height=10)
+            book_listbox.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
+            book_listbox.bind("<<ListboxSelect>>", select_book)
+            populate_book_list()
+
+            # Labels and entry fields for book information
+            tk.Label(self.root, text="Author:").grid(row=1, column=0, padx=10, pady=5)
+            author_entry = tk.Entry(self.root)
+            author_entry.grid(row=1, column=1, padx=10, pady=5)
+
+            tk.Label(self.root, text="Category:").grid(row=2, column=0, padx=10, pady=5)
+            category_var = tk.StringVar()
+            categories = ["Fiction", "Poetry", "Children", "Classic", "Romance", "History", "Psychology",
+                          "Travel/Adventure", "Biography/Autobiography"]
+            category_combobox = tk.OptionMenu(self.root, category_var, *categories)
+            category_combobox.grid(row=2, column=1, padx=10, pady=5)
+
+            tk.Label(self.root, text="Title:").grid(row=3, column=0, padx=10, pady=5)
+            title_entry = tk.Entry(self.root)
+            title_entry.grid(row=3, column=1, padx=10, pady=5)
+
+            tk.Label(self.root, text="ISBN:").grid(row=4, column=0, padx=10, pady=5)
+            isbn_entry = tk.Entry(self.root)
+            isbn_entry.grid(row=4, column=1, padx=10, pady=5)
+
+            tk.Label(self.root, text="Review:").grid(row=5, column=0, padx=10, pady=5)
+            review_entry = tk.Entry(self.root)
+            review_entry.grid(row=5, column=1, padx=10, pady=5)
+
+            tk.Label(self.root, text="Publisher:").grid(row=6, column=0, padx=10, pady=5)
+            publisher_entry = tk.Entry(self.root)
+            publisher_entry.grid(row=6, column=1, padx=10, pady=5)
+
+            tk.Label(self.root, text="Minimum Property:").grid(row=7, column=0, padx=10, pady=5)
+            minimum_property_entry = tk.Entry(self.root)
+            minimum_property_entry.grid(row=7, column=1, padx=10, pady=5)
+
+            tk.Label(self.root, text="Present Stock:").grid(row=8, column=0, padx=10, pady=5)
+            present_stock_entry = tk.Entry(self.root)
+            present_stock_entry.grid(row=8, column=1, padx=10, pady=5)
+
+            tk.Label(self.root, text="Price:").grid(row=9, column=0, padx=10, pady=5)
+            price_entry = tk.Entry(self.root)
+            price_entry.grid(row=9, column=1, padx=10, pady=5)
+
+            tk.Label(self.root, text="Publish Year:").grid(row=10, column=0, padx=10, pady=5)
+            publish_year_entry = tk.Entry(self.root)
+            publish_year_entry.grid(row=10, column=1, padx=10, pady=5)
+
+            # Submit button
+            submit_button = tk.Button(self.root, text="Save Changes", command=save_changes)
+            submit_button.grid(row=11, column=0, columnspan=2, pady=10)
+
+            # Create a button to go back to book operations
+            back_button = tk.Button(self.root, text="Back", command=go_back_to_operations)
+            back_button.grid(row=12, column=0, columnspan=2, pady=10)
 
         # Function to handle delete operation
         def delete_book():
