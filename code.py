@@ -1,8 +1,8 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox,scrolledtext
 from DataBase_Connection import get_database_connection
 import mysql.connector
-# import datetime
+import datetime
 # import traceback
 
 class BookstoreApp:
@@ -762,9 +762,184 @@ class BookstoreApp:
         inbox_button = tk.Button(self.root, text="Inbox", command=self.open_manager_inbox)
         inbox_button.grid(row=1, column=0, padx=10, pady=5)
 
+        # Add button for book operations
+        book_operations_button = tk.Button(self.root, text="Book Operations", command=self.open_book_operations)
+        book_operations_button.grid(row=2, column=0, padx=10, pady=5)
+
         logout_button = tk.Button(self.root, text="Logout", command=self.create_main_page)
         logout_button.grid(row=1, column=1, padx=10, pady=5)
 
+    def open_book_operations(self):
+        # Function to handle insert operation
+
+        def insert_book():
+            # Function to handle the insertion of a book
+            def get_manager_id():
+                try:
+                    # Execute a query to retrieve the manager ID where date_out is NULL
+                    get_manager_query = "SELECT manager_id FROM manager WHERE date_out IS NULL"
+                    self.cursor.execute(get_manager_query)
+                    manager_id = self.cursor.fetchone()[0]  # Assuming there's only one manager with date_out NULL
+                    return manager_id
+                except Exception as e:
+                    # Handle any exceptions (e.g., database connection error, no manager found)
+                    print("Error retrieving manager ID:", e)
+                    return None  # Return None if manager ID retrieval fails
+
+            def open_additional_info_window():
+                # Function to create a window for entering additional information
+
+                # Function to handle saving the entered information
+                def save_info():
+                    additional_info = info_text.get("1.0", tk.END)  # Retrieve the entered text
+                    additional_info_window.description = additional_info  # Store the entered text in the window object
+                    additional_info_window.destroy()  # Close the window
+
+                # Create a new window for entering additional information
+                additional_info_window = tk.Toplevel()
+                additional_info_window.title("Additional Information")
+
+                # Create a scrolled text box for entering information
+                info_text = scrolledtext.ScrolledText(additional_info_window, width=40, height=10)
+                info_text.pack(padx=10, pady=10)
+
+                # Create a button to save the entered information
+                save_button = tk.Button(additional_info_window, text="Save", command=save_info)
+                save_button.pack(pady=5)
+
+                # Make the window wait until it is closed
+                additional_info_window.wait_window(additional_info_window)
+
+                # Return the entered text when the window is closed
+                return additional_info_window.description if hasattr(additional_info_window, 'description') else ""
+
+            def go_back_to_operations():
+                # Open the book operations page
+                self.clear_window()
+                self.open_book_operations()
+
+            def submit_book():
+                # Get all the input values
+                author = author_entry.get()
+                category = category_var.get()
+                title = title_entry.get()
+                isbn = isbn_entry.get()
+                review = review_entry.get()
+                publisher = publisher_entry.get()
+                minimum_property = minimum_property_entry.get()
+                present_stock = present_stock_entry.get()
+                price = price_entry.get()
+                publish_year = publish_year_entry.get()
+                catalog_flag = 1  # Default value
+
+                # Insert the book into the database
+                insert_query = "INSERT INTO books (author, category, title, review, isbn,  publisher, minimum_property, present_stock, price, publish_year, catalog_flag) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                self.cursor.execute(insert_query, (
+                author, category, title, review, isbn, publisher, minimum_property, present_stock, price, publish_year,
+                catalog_flag))
+                self.mydb.commit()
+
+                # Show success message
+                messagebox.showinfo("Success", "Book inserted successfully.")
+                # Assuming insertion into books was successful, proceed to insert into manager_records
+                manager_id = get_manager_id()
+                operation = "Insert"
+                timestamp = datetime.datetime.now()
+                description = open_additional_info_window()
+
+                # Insert record into manager_records table
+                # Example:
+                insert_record_query = "INSERT INTO manager_records (manager_id, book_operations, timestamp, description) VALUES (%s, %s, %s, %s)"
+                self.cursor.execute(insert_record_query, (manager_id, operation, timestamp, description))
+                self.mydb.commit()
+
+                # Close the book insertion window
+                root.destroy()
+                self.open_book_operations()
+
+            # Clear the current page
+            self.clear_window()
+
+            # Labels and entry fields for book information
+            tk.Label(root, text="Author:").grid(row=0, column=0, padx=10, pady=5)
+            author_entry = tk.Entry(root)
+            author_entry.grid(row=0, column=1, padx=10, pady=5)
+
+            tk.Label(root, text="Category:").grid(row=1, column=0, padx=10, pady=5)
+            category_var = tk.StringVar()
+            categories = ["Fiction", "Poetry", "Children", "Classic", "Romance", "History", "Psychology",
+                          "Travel/Adventure", "Biography/Autobiography"]
+            category_combobox = tk.OptionMenu(root, category_var, *categories)
+            category_combobox.grid(row=1, column=1, padx=10, pady=5)
+
+            tk.Label(root, text="Title:").grid(row=2, column=0, padx=10, pady=5)
+            title_entry = tk.Entry(root)
+            title_entry.grid(row=2, column=1, padx=10, pady=5)
+
+            tk.Label(root, text="ISBN:").grid(row=3, column=0, padx=10, pady=5)
+            isbn_entry = tk.Entry(root)
+            isbn_entry.grid(row=3, column=1, padx=10, pady=5)
+
+            tk.Label(root, text="Review:").grid(row=4, column=0, padx=10, pady=5)
+            review_entry = tk.Entry(root)
+            review_entry.grid(row=4, column=1, padx=10, pady=5)
+
+            tk.Label(root, text="Publisher:").grid(row=5, column=0, padx=10, pady=5)
+            publisher_entry = tk.Entry(root)
+            publisher_entry.grid(row=5, column=1, padx=10, pady=5)
+
+            tk.Label(root, text="Minimum Property:").grid(row=6, column=0, padx=10, pady=5)
+            minimum_property_entry = tk.Entry(root)
+            minimum_property_entry.grid(row=6, column=1, padx=10, pady=5)
+
+            tk.Label(root, text="Present Stock:").grid(row=7, column=0, padx=10, pady=5)
+            present_stock_entry = tk.Entry(root)
+            present_stock_entry.grid(row=7, column=1, padx=10, pady=5)
+
+            tk.Label(root, text="Price:").grid(row=8, column=0, padx=10, pady=5)
+            price_entry = tk.Entry(root)
+            price_entry.grid(row=8, column=1, padx=10, pady=5)
+
+            tk.Label(root, text="Publish Year:").grid(row=9, column=0, padx=10, pady=5)
+            publish_year_entry = tk.Entry(root)
+            publish_year_entry.grid(row=9, column=1, padx=10, pady=5)
+
+            # Submit button
+            submit_button = tk.Button(root, text="Submit", command=submit_book)
+            submit_button.grid(row=10, column=0, columnspan=2, pady=10)
+
+            # Create a button to open book operations
+            back_button = tk.Button(self.root, text="Back", command=go_back_to_operations)
+            back_button.grid(row=11, column=0, columnspan=2, pady=10)
+
+        # Function to handle modify operation
+        def modify_book():
+            # Define the functionality for modifying a book here
+            pass
+
+        # Function to handle delete operation
+        def delete_book():
+            # Define the functionality for deleting a book here
+            pass
+
+        # Create a new window for book operations
+        book_operations_window = tk.Toplevel(self.root)
+        book_operations_window.title("Book Operations")
+
+        # Buttons for book operations
+        insert_button = tk.Button(book_operations_window, text="Insert", command=insert_book)
+        insert_button.pack(pady=10)
+
+        modify_button = tk.Button(book_operations_window, text="Modify", command=modify_book)
+        modify_button.pack(pady=10)
+
+        delete_button = tk.Button(book_operations_window, text="Delete", command=delete_book)
+        delete_button.pack(pady=10)
+
+        # Back button
+        back_button = tk.Button(book_operations_window, text="Back", command=book_operations_window.destroy)
+        back_button.pack(pady=10)
+############################## new
     def open_manager_inbox(self):
         # Clear the window
         self.clear_window()
