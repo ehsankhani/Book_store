@@ -1143,9 +1143,76 @@ class BookstoreApp:
             back_button.grid(row=12, column=0, columnspan=2, pady=10)
 
         # Function to handle delete operation
+        def add_manager_record(manager_id, operation, description):
+            try:
+                timestamp = datetime.datetime.now()
+                insert_record_query = "INSERT INTO manager_records (manager_id, book_operations, timestamp, description) VALUES (%s, %s, %s, %s)"
+                self.cursor.execute(insert_record_query, (manager_id, operation, timestamp, description))
+                self.mydb.commit()
+            except mysql.connector.Error as err:
+                print("Error:", err)
+
         def delete_book():
-            # Define the functionality for deleting a book here
-            pass
+            try:
+                # Fetch all books from the database
+                self.cursor.execute("SELECT * FROM books")
+                books = self.cursor.fetchall()
+
+                # Display the list of books in a separate window
+                delete_window = tk.Toplevel()
+                delete_window.title("Delete Book")
+
+                # Create a listbox to display all books
+                book_listbox = tk.Listbox(delete_window, width=50, height=10)
+                book_listbox.grid(row=0, column=0, columnspan=2, padx=10, pady=10)
+
+                for book in books:
+                    book_listbox.insert(tk.END, f"{book[0]} - {book[3]}")  # Book ID and Title
+
+                def delete_selected_book():
+                    # Get the selected book's ID
+                    selected_index = book_listbox.curselection()
+                    if selected_index:
+                        selected_book_id = books[selected_index[0]][0]  # Extract book ID
+
+                        # Ask the manager for confirmation before deleting
+                        confirmation = messagebox.askyesno("Confirmation", "Are you sure you want to delete this book?")
+                        if confirmation:
+                            # Delete the book based on the manager's choice
+                            delete_type = delete_choice.get()
+                            if delete_type == 0:
+                                # Soft delete: Set the catalog_flag to 0
+                                self.cursor.execute("UPDATE books SET catalog_flag = 0 WHERE book_id = %s",
+                                                    (selected_book_id,))
+                                self.mydb.commit()
+                                messagebox.showinfo("Success", "Book deleted from catalog successfully.")
+                                description = open_additional_info_window()
+                                add_manager_record(get_manager_id(), "Delete", description)
+                            elif delete_type == 1:
+                                # Hard delete: Remove the book from the database
+                                self.cursor.execute("DELETE FROM books WHERE book_id = %s", (selected_book_id,))
+                                self.mydb.commit()
+                                messagebox.showinfo("Success", "Book deleted from database successfully.")
+                                description = open_additional_info_window()
+                                add_manager_record(get_manager_id(), "Delete", description)
+                            else:
+                                messagebox.showwarning("Warning", "Invalid delete choice.")
+                            # Close the delete window after deletion
+                            delete_window.destroy()
+
+                # Radio buttons to choose delete type
+                delete_choice = tk.IntVar()
+                tk.Radiobutton(delete_window, text="<Delete from catalog>", variable=delete_choice, value=0).grid(row=1,
+                                                                                                                  column=0)
+                tk.Radiobutton(delete_window, text="<Delete from database>", variable=delete_choice, value=1).grid(
+                    row=1, column=1)
+
+                # Button to confirm deletion
+                delete_button = tk.Button(delete_window, text="Delete", command=delete_selected_book)
+                delete_button.grid(row=2, column=0, columnspan=2, pady=10)
+
+            except mysql.connector.Error as err:
+                print("Error:", err)
 
         # Create a new window for book operations
         book_operations_window = tk.Toplevel(self.root)
