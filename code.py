@@ -767,8 +767,77 @@ class BookstoreApp:
         book_operations_button = tk.Button(self.root, text="Book Operations", command=self.open_book_operations)
         book_operations_button.grid(row=2, column=0, padx=10, pady=5)
 
+        # Add button for editing manager info
+        edit_info_button = tk.Button(self.root, text="Edit Info", command=self.open_edit_manager_info)
+        edit_info_button.grid(row=3, column=0, padx=10, pady=5)
+
         logout_button = tk.Button(self.root, text="Logout", command=self.create_main_page)
         logout_button.grid(row=1, column=1, padx=10, pady=5)
+
+    def open_edit_manager_info(self):
+        # Clear the window and create the edit info page
+        self.clear_window()
+        tk.Label(self.root, text="Edit Manager Info", fg="blue").grid(row=0, column=0, columnspan=2)
+
+        try:
+            # Fetch existing manager info from the database where date_out is NULL
+            self.cursor.execute("SELECT * FROM manager WHERE date_out IS NULL")
+            manager_info = self.cursor.fetchone()
+
+            if manager_info:
+                manager_id = manager_info[0]  # Assuming index 0 is for manager ID
+                # Populate entry fields with existing manager info
+                tk.Label(self.root, text="Full Name:").grid(row=1, column=0, padx=10, pady=5)
+                full_name_entry = tk.Entry(self.root)
+                full_name_entry.insert(tk.END, manager_info[2])  # for full name
+                full_name_entry.grid(row=1, column=1, padx=10, pady=5)
+
+                tk.Label(self.root, text="National ID:").grid(row=2, column=0, padx=10, pady=5)
+                national_id_entry = tk.Entry(self.root)
+                national_id_entry.insert(tk.END, manager_info[3])  # for national ID
+                national_id_entry.grid(row=2, column=1, padx=10, pady=5)
+
+                tk.Label(self.root, text="Password:").grid(row=3, column=0, padx=10, pady=5)
+                password_entry = tk.Entry(self.root)
+                password_entry.insert(tk.END, manager_info[6])  # for password
+                password_entry.grid(row=3, column=1, padx=10, pady=5)
+
+                tk.Label(self.root, text="Date of Birth:").grid(row=4, column=0, padx=10, pady=5)
+                dob_entry = tk.Entry(self.root)
+                dob_entry.insert(tk.END, manager_info[7])  # for date of birth
+                dob_entry.grid(row=4, column=1, padx=10, pady=5)
+
+                tk.Label(self.root, text="Phone Number:").grid(row=5, column=0, padx=10, pady=5)
+                phone_entry = tk.Entry(self.root)
+                phone_entry.insert(tk.END, manager_info[8])  # for phone number
+                phone_entry.grid(row=5, column=1, padx=10, pady=5)
+
+                # Add button to submit changes
+                submit_button = tk.Button(self.root, text="Submit",
+                                          command=lambda: self.update_manager_info(full_name_entry.get(),
+                                                                                   national_id_entry.get(),
+                                                                                   password_entry.get(),
+                                                                                   dob_entry.get(),
+                                                                                   phone_entry.get(),
+                                                                                   manager_id))
+
+                submit_button.grid(row=6, column=0, columnspan=2, padx=10, pady=5)
+            else:
+                messagebox.showerror("Error", "No active manager found.")
+        except mysql.connector.Error as err:
+            print("Error:", err)
+            messagebox.showerror("Error", "Failed to fetch manager information.")
+
+    def update_manager_info(self, full_name, national_id, password, dob, phone, manager_id):
+        # Update manager info in the database
+        try:
+            update_query = "UPDATE manager SET full_name = %s, national_id = %s, password = %s, date_of_birth = %s, phone_number = %s WHERE manager_id = %s"
+            self.cursor.execute(update_query, (full_name, national_id, password, dob, phone, manager_id))
+            self.mydb.commit()
+            messagebox.showinfo("Success", "Manager information updated successfully.")
+        except mysql.connector.Error as err:
+            print("Error:", err)
+            messagebox.showerror("Error", "Failed to update manager information.")
 
     def open_book_operations(self):
         # Function to handle insert operation
