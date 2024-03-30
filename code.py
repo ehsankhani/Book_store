@@ -1300,7 +1300,6 @@ class BookstoreApp:
         # Back button
         back_button = tk.Button(book_operations_window, text="Back", command=book_operations_window.destroy)
         back_button.pack(pady=10)
-############################## new
     def open_manager_inbox(self):
         # Clear the window
         self.clear_window()
@@ -1699,6 +1698,7 @@ class BookstoreApp:
 
         # Update welcome message and display logout button if logged in
         if self.is_logged_in:
+            self.clear_window()
             self.welcome_label = tk.Label(self.root, text=f"Welcome, {self.logged_in_username}", fg="green")
             self.welcome_label.grid(row=3, columnspan=2)
 
@@ -1714,6 +1714,14 @@ class BookstoreApp:
             # Show Message Box button
             self.msg_box_button = tk.Button(self.root, text="Message Box", command=self.show_message_box)
             self.msg_box_button.grid(row=4, column=0)
+            
+            # GUI elements for main page
+            tk.Label(self.root, text="Search:").grid(row=0, column=0)
+            self.search_entry = tk.Entry(self.root)
+            self.search_entry.grid(row=0, column=1)
+            tk.Button(self.root, text="Search", command=self.search_books).grid(row=0, column=2)
+            self.search_results_listbox = tk.Listbox(self.root)
+            self.search_results_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
         else:
             self.welcome_label = tk.Label(self.root, text="not logged in", fg="red")
             self.welcome_label.grid(row=3, columnspan=3)
