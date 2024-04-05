@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox,scrolledtext
+from tkinter import messagebox,scrolledtext, simpledialog
 from DataBase_Connection import get_database_connection
 import mysql.connector
 import datetime
@@ -14,6 +14,7 @@ class BookstoreApp:
         self.logged_in_username = None
         self.is_admin = False  # Flag to indicate admin login status
         self.manager_id = None
+        self.cart = {}
 
         # Get the database connection
         self.mydb, self.cursor = get_database_connection()
@@ -1687,6 +1688,86 @@ class BookstoreApp:
         else:
             messagebox.showinfo("Search", "No books found matching the search query.")
 
+    def add_to_cart(self):
+        # Get the selected book from the search results listbox
+        selected_index = self.search_results_listbox.curselection()
+        if selected_index:
+            selected_book = self.search_results_listbox.get(selected_index)
+            # Split the selected book based on the comma separator
+            book_parts = selected_book.split(", ")
+            if len(book_parts) == 2:
+                # Extract book title and author
+                title_parts = book_parts[0].split(": ")
+                author_parts = book_parts[1].split(": ")
+                if len(title_parts) == 2 and len(author_parts) == 2:
+                    book_title = title_parts[1]
+                    author = author_parts[1]
+
+                    # Prompt the user to enter the quantity
+                    quantity = simpledialog.askinteger("Quantity",
+                                                       f"How many copies of '{book_title}' by {author} would you like to add to the cart?",
+                                                       parent=self.root)
+
+                    if quantity is not None:
+                        # Format the book ID to match the database query
+                        book_id = f"{book_title} by {author}"
+                        if book_id in self.cart:
+                            # If the book is already in the cart, update the quantity
+                            self.cart[book_id] += quantity
+                        else:
+                            # Otherwise, add a new entry to the cart
+                            self.cart[book_id] = quantity
+
+                        # Display a confirmation message
+                        messagebox.showinfo("Success",
+                                            f"{quantity} copies of '{book_title}' by {author} added to the cart.")
+
+                        # Update the cart view window
+                        self.view_cart()
+                else:
+                    # Display an error message if the format is invalid
+                    messagebox.showerror("Error", "Selected book format is invalid.")
+            else:
+                # Display an error message if the format is invalid
+                messagebox.showerror("Error", "Selected book format is invalid.")
+
+    def view_cart(self):
+        # Create a new window to display the cart contents
+        cart_window = tk.Toplevel(self.root)
+        cart_window.title("Cart")
+
+        # Add a label to indicate the purpose of the window
+        tk.Label(cart_window, text="Your Cart", font=("Helvetica", 16)).pack()
+
+        if self.cart:
+            # Display the contents of the cart
+            for book_info, quantity in self.cart.items():
+                # Split the book_info to extract title and author
+                title, author = book_info.split(" by ")
+
+                # Retrieve book details from the database using title and author
+                self.cursor.execute("SELECT title, author, price FROM books WHERE title = %s AND author = %s",
+                                    (title, author))
+                book_details = self.cursor.fetchone()
+                if book_details:
+                    book_title, author, price = book_details
+                    # Calculate the total price for each book (price * quantity)
+                    total_price = price * quantity
+                    tk.Label(cart_window,
+                             text=f"{book_title} by {author} - Quantity: {quantity} - Total Price: {total_price}").pack()
+        else:
+            # If the cart is empty, display a message
+            tk.Label(cart_window, text="Your cart is empty.").pack()
+
+        # Add a button to close the window
+        close_button = tk.Button(cart_window, text="Close", command=cart_window.destroy)
+        close_button.pack()
+
+        # # Assuming you want to print the cart contents at a certain point in your code
+        # print("Cart Contents:")
+        # for book_info, quantity in self.cart.items():
+        #     print(f"Book Info: {book_info}, Quantity: {quantity}")
+
     def update_login_status(self):
         # Clear any existing welcome and logout buttons
         if hasattr(self, 'welcome_label'):
@@ -1695,6 +1776,12 @@ class BookstoreApp:
             self.logout_button.destroy()
         if hasattr(self, 'msg_box_button'):
             self.msg_box_button.destroy()
+        if hasattr(self, 'search_results_listbox'):
+            self.search_results_listbox.destroy()
+        if hasattr(self, 'add_to_cart_button'):
+            self.add_to_cart_button.destroy()
+        if hasattr(self, 'cart_button'):
+            self.cart_button.destroy()
 
         # Update welcome message and display logout button if logged in
         if self.is_logged_in:
@@ -1714,7 +1801,7 @@ class BookstoreApp:
             # Show Message Box button
             self.msg_box_button = tk.Button(self.root, text="Message Box", command=self.show_message_box)
             self.msg_box_button.grid(row=4, column=0)
-            
+
             # GUI elements for main page
             tk.Label(self.root, text="Search:").grid(row=0, column=0)
             self.search_entry = tk.Entry(self.root)
@@ -1722,6 +1809,14 @@ class BookstoreApp:
             tk.Button(self.root, text="Search", command=self.search_books).grid(row=0, column=2)
             self.search_results_listbox = tk.Listbox(self.root)
             self.search_results_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
+
+            # Add button to add books to cart
+            self.add_to_cart_button = tk.Button(self.root, text="Add to Cart", command=self.add_to_cart)
+            self.add_to_cart_button.grid(row=2, column=1)
+
+            # Add button to view cart
+            self.cart_button = tk.Button(self.root, text="See the Cart", command=self.view_cart)
+            self.cart_button.grid(row=2, column=2)
         else:
             self.welcome_label = tk.Label(self.root, text="not logged in", fg="red")
             self.welcome_label.grid(row=3, columnspan=3)
