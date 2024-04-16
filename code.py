@@ -1408,7 +1408,7 @@ class BookstoreApp:
                             self.mydb.commit()
 
                             # Get the ID of the active admin
-                            active_admin_query = "SELECT admin_id FROM admin WHERE is_active = 1"
+                            active_admin_query = "SELECT admin_id FROM admin WHERE date_out IS NULL"
                             self.cursor.execute(active_admin_query)
                             active_admin_id = self.cursor.fetchone()[0]
 
@@ -1451,7 +1451,7 @@ class BookstoreApp:
                         self.mydb.commit()
 
                         # Get the ID of the active admin
-                        active_admin_query = "SELECT admin_id FROM admin WHERE is_active = 1"
+                        active_admin_query = "SELECT admin_id FROM admin WHERE date_out IS NULL"
                         self.cursor.execute(active_admin_query)
                         active_admin_id = self.cursor.fetchone()[0]
 
