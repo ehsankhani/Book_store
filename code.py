@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox,scrolledtext, simpledialog
+from tkinter import messagebox, scrolledtext, simpledialog
 from DataBase_Connection import get_database_connection
 import mysql.connector
 import datetime
@@ -12,6 +12,7 @@ class BookstoreApp:
         self.root.title("Bookstore")
         self.is_logged_in = False
         self.logged_in_username = None
+        self.logged_in_lastName = None
         self.is_admin = False  # Flag to indicate admin login status
         self.manager_id = None
         self.cart = {}
@@ -143,7 +144,8 @@ class BookstoreApp:
         if user:
             messagebox.showinfo("Success", "Sign-in successful!")
             self.is_logged_in = True
-            self.logged_in_username = user[3]  # Assuming the name is in the fourth column
+            self.logged_in_username = user[1]  # Assuming the name is in the fourth column
+            self.logged_in_lastName = user[4]  # last name
         else:
             messagebox.showerror("Error", "Invalid username or password.")
             self.is_logged_in = False
@@ -1731,10 +1733,13 @@ class BookstoreApp:
                 # Display an error message if the format is invalid
                 messagebox.showerror("Error", "Selected book format is invalid.")
 
-    def view_cart(self):
-        # Create a new window to display the cart contents
-        cart_window = tk.Toplevel(self.root)
-        cart_window.title("Cart")
+    def view_cart(self, parent=None):
+        # Create a new window or frame within the parent window to display the cart contents
+        if parent:
+            cart_window = parent
+        else:
+            cart_window = tk.Toplevel(self.root)
+            cart_window.title("Cart")
 
         # Add a label to indicate the purpose of the window
         tk.Label(cart_window, text="Your Cart", font=("Helvetica", 16)).pack()
@@ -1759,14 +1764,56 @@ class BookstoreApp:
             # If the cart is empty, display a message
             tk.Label(cart_window, text="Your cart is empty.").pack()
 
-        # Add a button to close the window
-        close_button = tk.Button(cart_window, text="Close", command=cart_window.destroy)
-        close_button.pack()
+        # Add a button to close the window if it's a separate window
+        if not parent:
+            close_button = tk.Button(cart_window, text="Close", command=cart_window.destroy)
+            close_button.pack()
 
         # # Assuming you want to print the cart contents at a certain point in your code
         # print("Cart Contents:")
         # for book_info, quantity in self.cart.items():
         #     print(f"Book Info: {book_info}, Quantity: {quantity}")
+
+    def proceed_to_checkout(self):
+        # Create a new window for checkout
+        checkout_window = tk.Toplevel(self.root)
+        checkout_window.title("Checkout")
+
+        # Add a label to indicate the purpose of the window
+        tk.Label(checkout_window, text="Checkout", font=("Helvetica", 16)).pack()
+
+        # Fetch user ID from the user table
+        self.cursor.execute("SELECT user_id FROM users WHERE username = %s", (self.logged_in_username,))
+        user_id = self.cursor.fetchone()[0]
+
+        # Fetch user's first name and last name
+        self.cursor.execute("SELECT first_name, last_name FROM users WHERE user_id = %s", (user_id,))
+        user_info = self.cursor.fetchone()
+        if user_info:
+            first_name, last_name = user_info
+            tk.Label(checkout_window, text=f"User: {first_name} {last_name}").pack()
+
+        # Fetch credit card type from the credit card table
+        self.cursor.execute("SELECT card_type FROM credit_cards WHERE user_id = %s", (user_id,))
+        card_type = self.cursor.fetchone()
+        if card_type:
+            tk.Label(checkout_window, text=f"Credit Card Type: {card_type[0]}").pack()
+
+        # Display the contents of the cart
+        self.view_cart(parent=checkout_window)
+
+        # Add a button to close the checkout window
+        close_button = tk.Button(checkout_window, text="Close", command=checkout_window.destroy)
+        close_button.pack()
+
+        # Add a button for finalizing the purchase
+        purchase_button = tk.Button(checkout_window, text="Proceed with Purchase", command=self.purchase)
+        purchase_button.pack()
+
+    def purchase(self):
+        # Show a messagebox confirming that the order has been submitted
+        messagebox.showinfo("Order Submitted", "Your order has been submitted. Please wait for "
+                                               "confirmation.you can see the confirmation message in the inbox")
 
     def update_login_status(self):
         # Clear any existing welcome and logout buttons
@@ -1782,6 +1829,8 @@ class BookstoreApp:
             self.add_to_cart_button.destroy()
         if hasattr(self, 'cart_button'):
             self.cart_button.destroy()
+        if hasattr(self, 'checkout_button'):
+            self.checkout_button.destroy()
 
         # Update welcome message and display logout button if logged in
         if self.is_logged_in:
@@ -1817,6 +1866,10 @@ class BookstoreApp:
             # Add button to view cart
             self.cart_button = tk.Button(self.root, text="See the Cart", command=self.view_cart)
             self.cart_button.grid(row=2, column=2)
+
+            # Add button to proceed to checkout
+            self.checkout_button = tk.Button(self.root, text="Proceed to Checkout", command=self.proceed_to_checkout)
+            self.checkout_button.grid(row=2, column=3)
         else:
             self.welcome_label = tk.Label(self.root, text="not logged in", fg="red")
             self.welcome_label.grid(row=3, columnspan=3)
