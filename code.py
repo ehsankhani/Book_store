@@ -1751,15 +1751,16 @@ class BookstoreApp:
                 title, author = book_info.split(" by ")
 
                 # Retrieve book details from the database using title and author
-                self.cursor.execute("SELECT title, author, price FROM books WHERE title = %s AND author = %s",
+                self.cursor.execute("SELECT title, author, price , ISBN FROM books WHERE title = %s AND author = %s",
                                     (title, author))
                 book_details = self.cursor.fetchone()
                 if book_details:
-                    book_title, author, price = book_details
+                    book_title, author, price, isbn = book_details
                     # Calculate the total price for each book (price * quantity)
                     total_price = price * quantity
                     tk.Label(cart_window,
-                             text=f"{book_title} by {author} - Quantity: {quantity} - Total Price: {total_price}").pack()
+                             text=f"{book_title} by {author} (the ISBN {isbn}) - Quantity: {quantity} - "
+                                  f"Total Price: {total_price}").pack()
         else:
             # If the cart is empty, display a message
             tk.Label(cart_window, text="Your cart is empty.").pack()
@@ -1791,13 +1792,16 @@ class BookstoreApp:
         user_info = self.cursor.fetchone()
         if user_info:
             first_name, last_name = user_info
+            tk.Label(checkout_window, text=f"User ID: {user_id}").pack()
             tk.Label(checkout_window, text=f"User: {first_name} {last_name}").pack()
 
-        # Fetch credit card type from the credit card table
-        self.cursor.execute("SELECT card_type FROM credit_cards WHERE user_id = %s", (user_id,))
-        card_type = self.cursor.fetchone()
-        if card_type:
-            tk.Label(checkout_window, text=f"Credit Card Type: {card_type[0]}").pack()
+        # Fetch credit card details from the credit card table
+        self.cursor.execute("SELECT card_type, card_number FROM credit_cards WHERE user_id = %s", (user_id,))
+        credit_card_info = self.cursor.fetchone()
+        if credit_card_info:
+            card_type, card_number = credit_card_info
+            tk.Label(checkout_window, text=f"Credit Card Type: {card_type}").pack()
+            tk.Label(checkout_window, text=f"Credit Card Number: {card_number}").pack()
 
         # Display the contents of the cart
         self.view_cart(parent=checkout_window)
