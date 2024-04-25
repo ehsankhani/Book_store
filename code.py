@@ -4,6 +4,8 @@ from DataBase_Connection import get_database_connection
 import mysql.connector
 import datetime
 from decimal import Decimal
+import re
+
 # import traceback
 
 class BookstoreApp:
@@ -1758,9 +1760,13 @@ class BookstoreApp:
                     book_title, author, price, isbn = book_details
                     # Calculate the total price for each book (price * quantity)
                     total_price = price * quantity
-                    tk.Label(cart_window,
-                             text=f"{book_title} by {author} (the ISBN {isbn}) - Quantity: {quantity} - "
-                                  f"Total Price: {total_price}").pack()
+                    label_text = f"{book_title} by {author} (the ISBN {isbn}) - Quantity: {quantity} - Total Price: {total_price}"
+                    tk.Label(cart_window, text=label_text).pack()
+
+                    # After the label is created, extract the ISBN using regular expressions
+                    isbn_match = re.search(r'\(the ISBN (\d+)\)', label_text)
+                    if isbn_match:
+                        isbn = isbn_match.group(1)
         else:
             # If the cart is empty, display a message
             tk.Label(cart_window, text="Your cart is empty.").pack()
@@ -1816,8 +1822,49 @@ class BookstoreApp:
 
     def purchase(self):
         # Show a messagebox confirming that the order has been submitted
-        messagebox.showinfo("Order Submitted", "Your order has been submitted. Please wait for "
-                                               "confirmation.you can see the confirmation message in the inbox")
+        messagebox.showinfo("Order Submitted", "Your order has been submitted. Please wait for confirmation. "
+                                               "You can see the confirmation message in the inbox.")
+
+        # Fetch user ID from the user table
+        self.cursor.execute("SELECT user_id FROM users WHERE username = %s", (self.logged_in_username,))
+        user_id = self.cursor.fetchone()[0]
+
+        # Iterate over the cart items and add purchase information to the purchase table
+        for book_info, quantity in self.cart.items():
+            # Split the book_info to extract title and author
+            title, author = book_info.split(" by ")
+
+            # Retrieve book details from the database using title and author
+            self.cursor.execute("SELECT isbn, price FROM books WHERE title = %s AND author = %s", (title, author))
+            book_data = self.cursor.fetchone()
+
+            if book_data:
+                book_isbn, book_price = book_data
+                purchase_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                # Fetch credit card details from the credit card table
+                self.cursor.execute("SELECT card_type, card_number FROM credit_cards WHERE user_id = %s", (user_id,))
+                credit_card_info = self.cursor.fetchone()
+
+                if credit_card_info:
+                    card_type, card_number = credit_card_info
+
+                    # Insert purchase information into the purchase table
+                    self.cursor.execute(
+                        "INSERT INTO purchases (user_id, isbn, book_name, quantity, price, purchase_date, "
+                        "credit_card_type, credit_card_number, purchase_status) "
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                        (user_id, book_isbn, title, quantity, book_price, purchase_date, card_type, card_number,
+                         'AwaitingResponse'))
+
+                    # Commit the transaction
+                    self.mydb.commit()
+
+        # Clear the cart after the purchase
+        self.cart = {}
+
+        # Update the cart view window
+        self.view_cart()
 
     def update_login_status(self):
         # Clear any existing welcome and logout buttons
