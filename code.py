@@ -394,9 +394,134 @@ class BookstoreApp:
             # If there are no messages, display a message indicating so
             tk.Label(inbox_window, text="No messages in the inbox", fg="red").pack(pady=10)
 
+        # Create a button to view user orders
+        user_orders_button = tk.Button(inbox_window, text="User Orders", command=self.open_user_orders)
+        user_orders_button.pack(pady=10)
+
         # Create a back button to return to the admin page
         back_button = tk.Button(inbox_window, text="Back", command=self.open_admin_page)
         back_button.pack(pady=10)
+
+    def open_user_orders(self):
+        # Clear the window
+        self.clear_window()
+
+        # Create a new window for displaying user orders
+        user_orders_window = tk.Toplevel(self.root)
+        user_orders_window.title("User Orders")
+
+        # Add a label to indicate the purpose of the window
+        tk.Label(user_orders_window, text="User Orders", font=("Helvetica", 16)).pack()
+
+        # Execute SQL query to retrieve orders with status "AwaitingResponse"
+        self.cursor.execute("SELECT * FROM purchases WHERE purchase_status = %s", ("AwaitingResponse",))
+        orders = self.cursor.fetchall()
+
+        if orders:
+            # Create a frame to hold the order details
+            order_frame = tk.Frame(user_orders_window)
+            order_frame.pack(padx=10, pady=10)
+
+            # Add labels to display column names
+            column_names = ["Order ID", "User ID", "ISBN", "Book Name", "Quantity", "Price", "Purchase Date",
+                            "Credit Card Type", "Credit Card Number", "Purchase Status", "Select"]
+            for col, column_name in enumerate(column_names):
+                tk.Label(order_frame, text=column_name, font=("Helvetica", 10, "bold")).grid(row=0, column=col, padx=5,
+                                                                                             pady=5)
+
+            # Create a dictionary to store the checkboxes
+            checkboxes = {}
+
+            # Populate the frame with order details and checkboxes
+            for row, order in enumerate(orders, start=1):
+                for col, value in enumerate(order):
+                    if col == len(order) - 1:
+                        # Create a checkbox for each row
+                        checkboxes[row] = tk.BooleanVar()
+                        tk.Checkbutton(order_frame, variable=checkboxes[row]).grid(row=row, column=col, padx=5, pady=5)
+                    else:
+                        tk.Label(order_frame, text=value).grid(row=row, column=col, padx=5, pady=5)
+
+            # Function to display book info for selected orders
+            def show_book_info():
+                for row, var in checkboxes.items():
+                    if var.get():
+                        # Retrieve the ISBN of the selected order
+                        order_id = orders[row - 1][0]  # Adjust index for zero-based indexing
+                        isbn = orders[row - 1][2]  # Extract ISBN from selected order
+                        # Retrieve book info using ISBN and display it
+                        self.display_book_info(isbn)
+
+            # Function to display user info for selected orders
+            def show_user_info():
+                for row, var in checkboxes.items():
+                    if var.get():
+                        # Retrieve the user ID of the selected order
+                        order_id = orders[row - 1][0]  # Adjust index for zero-based indexing
+                        user_id = orders[row - 1][1]  # Extract User ID from selected order
+                        # Retrieve user info using user ID and display it
+                        self.display_user_info(user_id)
+
+            # Add buttons for viewing book info and user info
+            book_info_button = tk.Button(user_orders_window, text="Book Info", command=show_book_info)
+            book_info_button.pack(side="left", padx=5, pady=10)
+
+            user_info_button = tk.Button(user_orders_window, text="User Info", command=show_user_info)
+            user_info_button.pack(side="left", padx=5, pady=10)
+
+        else:
+            # If there are no orders, display a message indicating so
+            tk.Label(user_orders_window, text="No orders found.", fg="red").pack(pady=10)
+
+        # Add a button to close the user orders window
+        close_button = tk.Button(user_orders_window, text="Back", command=self.open_admin_inbox)
+        close_button.pack(pady=10)
+
+    # Add methods to display book info and user info based on their IDs
+    def display_book_info(self, isbn):
+        # Fetch book information from the database using ISBN
+        self.cursor.execute("SELECT author, category, title, ISBN, publisher, minimum_property, present_stock, price, "
+                            " publish_year , catalog_flag FROM books WHERE isbn = %s", (isbn,))
+        book_info = self.cursor.fetchone()
+        if book_info:
+            (author, category, title, ISBN, publisher, minimum_property, present_stock,
+             price, publish_year, catalog_flag) = book_info
+            # Display book information
+            messagebox.showinfo("Book Information",
+                                f"Author: {author}\n"
+                                f"Category: {category}\n"
+                                f"Title: {title}\n"
+                                f"ISBN: {ISBN}\n"
+                                f"publisher: {publisher}\n"
+                                f"minimum_property: {minimum_property}\n"
+                                f"present_stock: {present_stock}\n"
+                                f"Price: {price}\n"
+                                f"publish_year: {publish_year}\n"
+                                f"catalog_flag: {catalog_flag}\n")
+        else:
+            messagebox.showerror("Error", "Book information not found.")
+
+    def display_user_info(self, user_id):
+        # Fetch user information from the database using user ID
+        self.cursor.execute(
+            "SELECT first_name, last_name, users.city, users.state, users.zip_code, card_type, exp_date, card_number "
+            "FROM users JOIN credit_cards ON users.user_id = credit_cards.user_id WHERE users.user_id = %s",
+            (user_id,))
+        user_info = self.cursor.fetchone()
+        if user_info:
+            first_name, last_name, city, state, zip_code, card_type, exp_date, card_number = user_info
+            # Display user information
+            messagebox.showinfo("User Information",
+                                f"First Name: {first_name}\n"
+                                f"Last Name: {last_name}\n"
+                                f"City: {city}\n"
+                                f"State: {state}\n"
+                                f"zip_code: {zip_code}\n"
+                                f"Card Type: {card_type}\n"
+                                f"Expire date: {exp_date}\n"
+                                f"Card Number: {card_number}")
+        else:
+            messagebox.showerror("Error", "User information not found.")
 
     def show_book_list(self):
         # Clear the current window
