@@ -431,6 +431,7 @@ class BookstoreApp:
 
             # Create a dictionary to store the checkboxes
             checkboxes = {}
+            action_buttons = {}
 
             # Populate the frame with order details and checkboxes
             for row, order in enumerate(orders, start=1):
@@ -438,16 +439,22 @@ class BookstoreApp:
                     if col == len(order) - 1:
                         # Create a checkbox for each row
                         checkboxes[row] = tk.BooleanVar()
-                        tk.Checkbutton(order_frame, variable=checkboxes[row]).grid(row=row, column=col, padx=5, pady=5)
+                        tk.Checkbutton(order_frame, variable=checkboxes[row]).grid(row=row, column=10, padx=5, pady=5)
                     else:
                         tk.Label(order_frame, text=value).grid(row=row, column=col, padx=5, pady=5)
-
+                # Create Accept and Decline buttons for each row
+                accept_button = tk.Button(order_frame, text="Accept",
+                                          command=lambda idx=row: self.accept_order(orders[idx - 1][0]))
+                accept_button.grid(row=row, column=len(column_names), padx=5, pady=5)
+                decline_button = tk.Button(order_frame, text="Decline",
+                                           command=lambda idx=row: self.decline_order(orders[idx - 1][0]))
+                decline_button.grid(row=row, column=len(column_names) + 1, padx=5, pady=5)
             # Function to display book info for selected orders
             def show_book_info():
                 for row, var in checkboxes.items():
                     if var.get():
                         # Retrieve the ISBN of the selected order
-                        order_id = orders[row - 1][0]  # Adjust index for zero-based indexing
+                        # order_id = orders[row - 1][0]  # Adjust index for zero-based indexing
                         isbn = orders[row - 1][2]  # Extract ISBN from selected order
                         # Retrieve book info using ISBN and display it
                         self.display_book_info(isbn)
@@ -457,7 +464,7 @@ class BookstoreApp:
                 for row, var in checkboxes.items():
                     if var.get():
                         # Retrieve the user ID of the selected order
-                        order_id = orders[row - 1][0]  # Adjust index for zero-based indexing
+                        # order_id = orders[row - 1][0]  # Adjust index for zero-based indexing
                         user_id = orders[row - 1][1]  # Extract User ID from selected order
                         # Retrieve user info using user ID and display it
                         self.display_user_info(user_id)
@@ -476,6 +483,140 @@ class BookstoreApp:
         # Add a button to close the user orders window
         close_button = tk.Button(user_orders_window, text="Back", command=self.open_admin_inbox)
         close_button.pack(pady=10)
+
+    def accept_order(self, order_id):
+        # Get the admin information (admin ID and admin username) from the admin table
+        admin_info_query = "SELECT admin_id, username FROM admin WHERE date_out IS NULL"
+        self.cursor.execute(admin_info_query)
+        admin_info = self.cursor.fetchone()
+
+        if admin_info:
+            admin_id, admin_username = admin_info
+            submit_date = datetime.datetime.now()
+
+            # Update the purchase table to mark the order as accepted
+            update_query = ("UPDATE purchases SET purchase_status = 'Accepted', admin_id = %s, admin_fullname = %s,"
+                            " submit_date = %s WHERE purchase_id = %s")
+            self.cursor.execute(update_query, (admin_id, admin_username, submit_date, order_id))
+            self.mydb.commit()  # Commit the transaction
+            self.refresh_database_connection()
+
+            # Insert a record into the admin records table
+            description = f"The purchase ID {order_id} was accepted by {admin_username}"
+            self.cursor.execute(
+                "INSERT INTO admin_records (admin_id, action_type, book_id, timestamp, description) VALUES (%s, %s, %s, %s, %s)",
+                (admin_id, "Accept Order", order_id, submit_date, description))
+            self.mydb.commit()  # Commit the transaction
+            self.refresh_database_connection()
+
+            # Insert a message into the user's message box
+            user_id_query = "SELECT user_id FROM purchases WHERE purchase_id = %s"
+            self.cursor.execute(user_id_query, (order_id,))
+            user_id = self.cursor.fetchone()[0]
+
+            # Get the book name and purchase date from the purchase table
+            purchase_details_query = "SELECT book_name, purchase_date, quantity FROM purchases WHERE purchase_id = %s"
+            self.cursor.execute(purchase_details_query, (order_id,))
+            purchase_details = self.cursor.fetchone()
+
+            if purchase_details:
+                book_name, purchase_date, quantity = purchase_details
+
+                # Construct the message for the user
+                user_message = (f"Your order of {quantity} {book_name} purchased on {purchase_date} has been accepted. "
+                                f"Thank you for your order!")
+
+                # Insert the message into the user's message box
+                insert_message_query = "UPDATE users SET inbox = CONCAT(IFNULL(inbox, ''), %s) WHERE user_id = %s"
+                self.cursor.execute(insert_message_query, (user_message + '\n', user_id))
+                self.mydb.commit()  # Commit the transaction
+                self.refresh_database_connection()
+
+                # Display a messagebox indicating that the order has been accepted
+                messagebox.showinfo("Success", f"Order {order_id} accepted successfully.")
+            else:
+                # Display a messagebox with an error message if purchase details are not found
+                messagebox.showerror("Error", "Failed to retrieve purchase details.")
+
+            # Get the ISBN and quantity of the book from the purchase table
+            purchase_info_query = "SELECT isbn, quantity FROM purchases WHERE purchase_id = %s"
+            self.cursor.execute(purchase_info_query, (order_id,))
+            purchase_info = self.cursor.fetchone()
+
+            if purchase_info:
+                isbn, quantity = purchase_info
+
+                # Reduce the quantity of the book in the books table
+                reduce_quantity_query = "UPDATE books SET present_stock = present_stock - %s WHERE isbn = %s"
+                self.cursor.execute(reduce_quantity_query, (quantity, isbn))
+                self.mydb.commit()  # Commit the transaction
+                self.refresh_database_connection()
+
+                # Display a messagebox indicating that the order has been accepted
+                messagebox.showinfo("Success", f"Order {order_id} accepted successfully.")
+            else:
+                # Display a messagebox with an error message if no purchase info is found
+                messagebox.showerror("Error", "Failed to retrieve purchase information.")
+        else:
+            # Display a messagebox with an error message if no active admin is found
+            messagebox.showerror("Error", "No active admin found.")
+
+    def decline_order(self, order_id):
+        # Get the admin information (admin ID and admin username) from the admin table
+        admin_info_query = "SELECT admin_id, username FROM admin WHERE date_out IS NULL"
+        self.cursor.execute(admin_info_query)
+        admin_info = self.cursor.fetchone()
+
+        if admin_info:
+            admin_id, admin_username = admin_info
+            submit_date = datetime.datetime.now()
+
+            # Update the purchase table to mark the order as declined
+            update_query = ("UPDATE purchases SET purchase_status = 'Declined', admin_id = %s, admin_fullname = %s,"
+                            " submit_date = %s WHERE purchase_id = %s")
+            self.cursor.execute(update_query, (admin_id, admin_username, submit_date, order_id))
+            self.mydb.commit()  # Commit the transaction
+            self.refresh_database_connection()
+
+            # Insert a record into the admin records table
+            description = f"The purchase ID {order_id} was declined by {admin_username}"
+            self.cursor.execute(
+                "INSERT INTO admin_records (admin_id, action_type, book_id, timestamp, description) VALUES"
+                " (%s, %s, %s, %s, %s)",
+                (admin_id, "Decline Order", order_id, submit_date, description))
+            self.mydb.commit()  # Commit the transaction
+            self.refresh_database_connection()
+
+            # Get the book name and purchase date from the purchase table
+            purchase_details_query = ("SELECT book_name, purchase_date , quantity , user_id "
+                                      "FROM purchases WHERE purchase_id = %s")
+            self.cursor.execute(purchase_details_query, (order_id,))
+            purchase_details = self.cursor.fetchone()
+
+            if purchase_details:
+                book_name, purchase_date, quantity, user_id = purchase_details
+
+                # Construct the message for the user
+                user_message = (f"Your order of {quantity} {book_name} purchased on {purchase_date} has been declined."
+                                f" We apologize for any inconvenience.")
+
+                # Insert the message into the user's message box
+                insert_message_query = "UPDATE users SET inbox = CONCAT(IFNULL(inbox, ''), %s) WHERE user_id = %s"
+                self.cursor.execute(insert_message_query, (user_message + '\n', user_id))
+                self.mydb.commit()  # Commit the transaction
+                self.refresh_database_connection()
+
+                # Display a messagebox indicating that the order has been declined
+                messagebox.showinfo("Success", f"Order {order_id} declined successfully.")
+            else:
+                # Display a messagebox with an error message if purchase details are not found
+                messagebox.showerror("Error", "Failed to retrieve purchase details.")
+
+            # Display a messagebox indicating that the order has been declined
+            messagebox.showinfo("Success", f"Order {order_id} declined successfully.")
+        else:
+            # Display a messagebox with an error message if no active admin is found
+            messagebox.showerror("Error", "No active admin found.")
 
     # Add methods to display book info and user info based on their IDs
     def display_book_info(self, isbn):
@@ -549,7 +690,11 @@ class BookstoreApp:
 
                 # Display book details in a messagebox
                 messagebox.showinfo("Book Details",
-                                    f"Title: {selected_book[3]}\nAuthor: {selected_book[1]}\nCategory: {selected_book[2]}\nISBN: {selected_book[4]}\nReview: {selected_book[5]}\nPublisher: {selected_book[6]}\nMinimum Property: {selected_book[7]}\nPresent Property: {selected_book[8]}\nPrice: {selected_book[9]}\nPublish Year: {selected_book[10]}")
+                                    f"Title: {selected_book[3]}\nAuthor: {selected_book[1]}\nCategory: "
+                                    f"{selected_book[2]}\nISBN: {selected_book[4]}\nReview: {selected_book[5]}\n"
+                                    f"Publisher: {selected_book[6]}\nMinimum Property: {selected_book[7]}\n"
+                                    f"Present Property: {selected_book[8]}\nPrice: {selected_book[9]}\n"
+                                    f"Publish Year: {selected_book[10]}")
 
         # Bind the double - click event to the listbox
         book_listbox.bind("<Double-Button-1>", show_book_details)
