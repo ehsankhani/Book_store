@@ -5,6 +5,7 @@ import mysql.connector
 import datetime
 from decimal import Decimal
 import re
+import Reports
 
 # import traceback
 
@@ -423,8 +424,8 @@ class BookstoreApp:
             order_frame.pack(padx=10, pady=10)
 
             # Add labels to display column names
-            column_names = ["Order ID", "User ID", "ISBN", "Book Name", "Quantity", "Price", "Purchase Date",
-                            "Credit Card Type", "Credit Card Number", "Purchase Status", "Select"]
+            column_names = ["Order ID", "User ID", "ISBN", "Book Name", "category", "Quantity", "Price", "Purchase Date",
+                            "Credit Card Type", "Credit Card Number", "Purchase Status"]
             for col, column_name in enumerate(column_names):
                 tk.Label(order_frame, text=column_name, font=("Helvetica", 10, "bold")).grid(row=0, column=col, padx=5,
                                                                                              pady=5)
@@ -439,7 +440,7 @@ class BookstoreApp:
                     if col == len(order) - 1:
                         # Create a checkbox for each row
                         checkboxes[row] = tk.BooleanVar()
-                        tk.Checkbutton(order_frame, variable=checkboxes[row]).grid(row=row, column=10, padx=5, pady=5)
+                        tk.Checkbutton(order_frame, variable=checkboxes[row]).grid(row=row, column=15, padx=5, pady=5)
                     else:
                         tk.Label(order_frame, text=value).grid(row=row, column=col, padx=5, pady=5)
                 # Create Accept and Decline buttons for each row
@@ -1038,16 +1039,20 @@ class BookstoreApp:
         inbox_button = tk.Button(self.root, text="Inbox", command=self.open_manager_inbox)
         inbox_button.grid(row=1, column=0, padx=10, pady=5)
 
-        # Add button for book operations
         book_operations_button = tk.Button(self.root, text="Book Operations", command=self.open_book_operations)
         book_operations_button.grid(row=2, column=0, padx=10, pady=5)
 
-        # Add button for editing manager info
         edit_info_button = tk.Button(self.root, text="Edit Info", command=self.open_edit_manager_info)
         edit_info_button.grid(row=3, column=0, padx=10, pady=5)
 
+        reports_button = tk.Button(self.root, text="Reports", command=self.open_reports)
+        reports_button.grid(row=4, column=0, padx=10, pady=5)
+
         logout_button = tk.Button(self.root, text="Logout", command=self.create_main_page)
         logout_button.grid(row=1, column=1, padx=10, pady=5)
+
+    def open_reports(self):
+        Reports.manager_report(self.root)  # manager_report is a function in reports.py
 
     def open_edit_manager_info(self):
         # Clear the window and create the edit info page
@@ -2105,11 +2110,12 @@ class BookstoreApp:
             title, author = book_info.split(" by ")
 
             # Retrieve book details from the database using title and author
-            self.cursor.execute("SELECT isbn, price FROM books WHERE title = %s AND author = %s", (title, author))
+            self.cursor.execute("SELECT isbn, price, category FROM books WHERE title = %s AND author = %s",
+                                (title, author))
             book_data = self.cursor.fetchone()
 
             if book_data:
-                book_isbn, book_price = book_data
+                book_isbn, book_price, book_category = book_data
                 purchase_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                 # Fetch credit card details from the credit card table
@@ -2121,10 +2127,10 @@ class BookstoreApp:
 
                     # Insert purchase information into the purchase table
                     self.cursor.execute(
-                        "INSERT INTO purchases (user_id, isbn, book_name, quantity, price, purchase_date, "
+                        "INSERT INTO purchases (user_id, isbn, book_name, category, quantity, price, purchase_date, "
                         "credit_card_type, credit_card_number, purchase_status) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                        (user_id, book_isbn, title, quantity, book_price, purchase_date, card_type, card_number,
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                        (user_id, book_isbn, title, book_category, quantity, book_price, purchase_date, card_type, card_number,
                          'AwaitingResponse'))
 
                     # Commit the transaction
