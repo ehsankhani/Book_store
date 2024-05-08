@@ -5,7 +5,8 @@ import mysql.connector
 import datetime
 from decimal import Decimal
 import re
-import Reports
+from Reports import ManagerReports  # Import the Reports class from reports.py
+
 
 # import traceback
 
@@ -1052,7 +1053,9 @@ class BookstoreApp:
         logout_button.grid(row=1, column=1, padx=10, pady=5)
 
     def open_reports(self):
-        Reports.manager_report(self.root)  # manager_report is a function in reports.py
+        reports_manager = ManagerReports(self.root)  # Create an instance of the Reports class
+        # Call the manager_report method on the instance to open the reports window
+        reports_manager.create_report_window()
 
     def open_edit_manager_info(self):
         # Clear the window and create the edit info page
