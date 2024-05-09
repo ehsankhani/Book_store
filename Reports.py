@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import mysql.connector
 from DataBase_Connection import get_database_connection
+from datetime import datetime
+# import decimal
 
 
 class ManagerReports:
@@ -19,7 +21,7 @@ class ManagerReports:
         tk.Label(self.reports_window, text="Reports", font=("Helvetica", 16)).pack(pady=10)
 
         # Dropdown menu for selecting report type
-        report_types = ["Report 1", "Report 2", "Report 3", "Report 4", "Report 5", "Report 6"]
+        report_types = ["Report 1", "Report 2", "Report 3", "Report 4", "Report 5", "Report 6", "Report 7", "Report 8"]
         self.selected_report = tk.StringVar(self.reports_window)
         self.selected_report.set(report_types[0])  # Default selection
         report_dropdown = ttk.Combobox(self.reports_window, textvariable=self.selected_report, values=report_types, state="readonly")
@@ -47,6 +49,10 @@ class ManagerReports:
             self.generate_report_5()
         elif report_type == "Report 6":
             self.generate_report_6()
+        elif report_type == "Report 7":
+            self.generate_report_7()
+        elif report_type == "Report 8":
+            self.generate_report_8()
 
     def generate_custom_report(self):
         # Implement functionality to generate custom reports
@@ -352,8 +358,124 @@ class ManagerReports:
             messagebox.showerror("Database Error", f"Failed to connect to the database: {err}")
 
     def generate_report_6(self):
-        pass
+        try:
+            # Establish database connection
+            mydb, cursor = get_database_connection()
 
+            # Fetch distinct users from the purchase table
+            cursor.execute("SELECT DISTINCT user_id FROM purchases")
+            users = [row[0] for row in cursor.fetchall()]
+
+            if not users:
+                messagebox.showwarning("No Data", "There are no records in the purchases table.")
+                return
+
+            # Function to calculate and display the average purchase for the selected user
+            def display_average_purchase():
+                try:
+                    selected_user = selected_username.get()
+
+                    # Retrieve the total quantity and total cost of purchases made by the selected user
+                    cursor.execute("""
+                        SELECT SUM(quantity), SUM(quantity * price)
+                        FROM purchases
+                        WHERE user_id = %s AND purchase_status = 'Accepted'
+                    """, (selected_user,))
+                    # Inside display_average_purchase function
+                    total_quantity, total_cost = cursor.fetchone()
+
+                    # Convert total_cost and total_quantity to float or decimal.Decimal
+                    total_cost = float(total_cost) if total_cost else 0
+                    total_quantity = float(total_quantity) if total_quantity else 0
+
+                    # Calculate the average purchase
+                    if total_quantity != 0:
+                        average_purchase = total_cost / total_quantity
+                        messagebox.showinfo("Average Purchase",
+                                            f"Average purchase for user '{selected_user}': {average_purchase:.2f}")
+                    else:
+                        messagebox.showinfo("Average Purchase",
+                                            f"No purchase data available for user '{selected_user}'.")
+
+                except mysql.connector.Error as err:
+                    messagebox.showerror("Database Error", f"Failed to fetch data from the database: {err}")
+                finally:
+                    # Close the connection
+                    mydb.close()
+
+            # Create a new window to prompt the manager to choose a user
+            input_window = tk.Toplevel(self.reports_window)
+            input_window.title("Select User")
+
+            # Prompt manager to choose a user
+            selected_username = tk.StringVar()
+            username_label = tk.Label(input_window, text="Select a user:")
+            username_label.pack(pady=5)
+            username_dropdown = ttk.Combobox(input_window, textvariable=selected_username, values=users,
+                                             state="readonly")
+            username_dropdown.pack(pady=5)
+            username_dropdown.current(0)  # Default selection
+
+            # Button to display the average purchase
+            display_button = tk.Button(input_window, text="Display Average Purchase", command=display_average_purchase)
+            display_button.pack(pady=5)
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Failed to connect to the database: {err}")
+
+    def generate_report_7(self):
+        try:
+            # Establish database connection
+            mydb, cursor = get_database_connection()
+
+            # Query to calculate the total number of books sold and the total number of purchases
+            cursor.execute("SELECT SUM(quantity), COUNT(*) FROM purchases")
+            total_books_sold, total_purchases = cursor.fetchone()
+
+            if not total_books_sold or not total_purchases:
+                messagebox.showwarning("No Data", "There are no records in the purchases table.")
+                return
+
+            # Calculate the average number of books sold per purchase
+            average_books_per_purchase = total_books_sold / total_purchases
+
+            # Display the average number of books sold per purchase
+            messagebox.showinfo("Average Books Sold per Purchase",
+                                f"Average number of books sold per purchase: {average_books_per_purchase:.2f}")
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Failed to connect to the database: {err}")
+
+    def generate_report_8(self):
+        try:
+            # Establish database connection
+            mydb, cursor = get_database_connection()
+
+            # Query to fetch the oldest purchase date
+            cursor.execute("SELECT MIN(purchase_date) FROM purchases")
+            oldest_purchase_date = cursor.fetchone()[0]
+
+            if not oldest_purchase_date:
+                messagebox.showwarning("No Data", "There are no records in the purchases table.")
+                return
+
+            # Calculate the number of days between the oldest purchase date and the current date
+            current_date = datetime.now().date()
+            days_difference = (current_date - oldest_purchase_date.date()).days
+
+            # Query to fetch the total number of customers
+            cursor.execute("SELECT COUNT(DISTINCT user_id) FROM purchases")
+            total_customers = cursor.fetchone()[0]
+
+            # Calculate the average number of customers per day
+            average_customers_per_day = total_customers / days_difference if days_difference > 0 else 0
+
+            # Display the average number of customers per day
+            messagebox.showinfo("Average Customers per Day",
+                                f"Average number of customers per day: {average_customers_per_day:.2f}")
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Failed to connect to the database: {err}")
 
 # # Example usage:
 # root = tk.Tk()
