@@ -138,8 +138,6 @@ class ManagerReports:
 
                 except mysql.connector.Error as err:
                     messagebox.showerror("Database Error", f"Failed to fetch data from the database: {err}")
-
-
             # Re-establish the database connection
             mydb, cursor = get_database_connection()
 
@@ -209,10 +207,149 @@ class ManagerReports:
             messagebox.showerror("Database Error", f"Failed to fetch data from the database: {err}")
 
     def generate_report_4(self):
-        pass
+        try:
+            # Re-establish the database connection
+            mydb, cursor = get_database_connection()
+
+            # Fetch all existing categories from the books table
+            cursor.execute("SELECT DISTINCT category FROM books")
+            categories = [row[0] for row in cursor.fetchall()]
+
+            if not categories:
+                messagebox.showwarning("No Data", "There are no records in the books table.")
+                return
+
+            # Create a new window to prompt the manager to choose a category
+            category_window = tk.Toplevel(self.reports_window)
+            category_window.title("Select Category")
+
+            # Prompt manager to choose category
+            selected_category = tk.StringVar()
+            category_label = tk.Label(category_window, text="Select a category:")
+            category_label.pack(pady=5)
+            category_dropdown = ttk.Combobox(category_window, textvariable=selected_category, values=categories,
+                                             state="readonly")
+            category_dropdown.pack(pady=5)
+            category_dropdown.current(0)  # Default selection
+
+            # Function to display the list of most expensive books in the selected category
+            def display_most_expensive_books():
+                try:
+                    # Establish the database connection
+                    mydb, cursor = get_database_connection()
+
+                    category = selected_category.get()
+
+                    # Retrieve the books belonging to the selected category and order them by price in descending order
+                    cursor.execute("""
+                        SELECT book_id, title, price
+                        FROM books
+                        WHERE category=%s
+                        ORDER BY price DESC
+                    """, (category,))
+                    books = cursor.fetchall()
+
+                    if not books:
+                        messagebox.showinfo("No Data", f"There are no records for category '{category}'.")
+                        return
+
+                    # Create a new window to display the list of most expensive books
+                    result_window = tk.Toplevel(self.reports_window)
+                    result_window.title(f"Most Expensive Books in Category '{category}'")
+
+                    # Display the list of most expensive books in a listbox
+                    listbox = tk.Listbox(result_window, width=100)
+                    listbox.pack(padx=10, pady=10)
+
+                    # Add the most expensive books to the listbox
+                    for book in books:
+                        book_id = book[0]
+                        title = book[1]
+                        price = book[2]
+                        listbox.insert(tk.END, f"Book ID: {book_id}, Title: {title}, Price: {price}")
+
+                except mysql.connector.Error as err:
+                    messagebox.showerror("Database Error", f"Failed to fetch data from the database: {err}")
+            # Button to display the list of most expensive books
+            display_button = tk.Button(category_window, text="Display Most Expensive Books",
+                                       command=display_most_expensive_books)
+            display_button.pack(pady=5)
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Failed to fetch data from the database: {err}")
 
     def generate_report_5(self):
-        pass
+        try:
+            # Establish database connection
+            mydb, cursor = get_database_connection()
+
+            # Fetch distinct months from the purchases table
+            cursor.execute("SELECT DISTINCT MONTH(submit_date) FROM purchases")
+            months = [str(row[0]) for row in cursor.fetchall()]
+
+            if not months:
+                messagebox.showwarning("No Data", "There are no records in the purchases table.")
+                return
+
+            # Fetch distinct categories from the purchases table
+            cursor.execute("SELECT DISTINCT category FROM purchases")
+            categories = [row[0] for row in cursor.fetchall()]
+
+            if not categories:
+                messagebox.showwarning("No Data", "There are no records in the purchases table.")
+                return
+
+            # Function to display the number of buyers for the selected category and month
+            def display_buyers():
+                try:
+                    month = selected_month.get()
+                    category = selected_category.get()
+
+                    # Retrieve the number of unique buyers who purchased from the selected category in the selected month
+                    cursor.execute("""
+                        SELECT COUNT(DISTINCT user())
+                        FROM purchases
+                        WHERE category = %s AND MONTH(submit_date) = %s AND purchase_status = 'Accepted'
+                    """, (category, month))
+                    num_buyers = cursor.fetchone()[0]
+
+                    # Display the number of buyers
+                    messagebox.showinfo("Number of Buyers",
+                                        f"Number of buyers for category '{category}' in month {month}: {num_buyers}")
+
+                except mysql.connector.Error as err:
+                    messagebox.showerror("Database Error", f"Failed to fetch data from the database: {err}")
+                finally:
+                    # Close the connection
+                    mydb.close()
+
+            # Create a new window to prompt the manager to choose a month and category
+            input_window = tk.Toplevel(self.reports_window)
+            input_window.title("Select Month and Category")
+
+            # Prompt manager to choose month
+            selected_month = tk.StringVar()
+            month_label = tk.Label(input_window, text="Select a month:")
+            month_label.pack(pady=5)
+            month_dropdown = ttk.Combobox(input_window, textvariable=selected_month, values=months, state="readonly")
+            month_dropdown.pack(pady=5)
+            month_dropdown.current(0)  # Default selection
+
+            # Prompt manager to choose category
+            selected_category = tk.StringVar()
+            category_label = tk.Label(input_window, text="Select a category:")
+            category_label.pack(pady=5)
+            category_dropdown = ttk.Combobox(input_window, textvariable=selected_category, values=categories,
+                                             state="readonly")
+            category_dropdown.pack(pady=5)
+            category_dropdown.current(0)  # Default selection
+
+            # Button to display the number of buyers
+            display_button = tk.Button(input_window, text="Display Number of Buyers", command=display_buyers)
+            display_button.pack(pady=5)
+
+        except mysql.connector.Error as err:
+            messagebox.showerror("Database Error", f"Failed to connect to the database: {err}")
 
     def generate_report_6(self):
         pass
