@@ -7,7 +7,6 @@ from decimal import Decimal
 import re
 from Reports import ManagerReports  # Import the Reports class from reports.py
 
-
 # import traceback
 
 class BookstoreApp:
@@ -48,11 +47,30 @@ class BookstoreApp:
         tk.Button(self.root, text="Manager Login", command=self.show_manager_login_page).grid(row=2, column=2,
                                                                                               sticky="e")
 
+        # New buttons for cart
+        tk.Button(self.root, text="Add to Cart", command=self.add_to_cart).grid(row=4, column=0)
+        tk.Button(self.root, text="View Cart", command=self.view_cart).grid(row=4, column=1)
+        tk.Button(self.root, text="proceed to checkout", command=self.not_logged_in_warning).grid(row=4, column=2)
+
         self.login_status_label = tk.Label(self.root, text="", fg="red")
-        self.login_status_label.grid(row=3, columnspan=3)
+        self.login_status_label.grid(row=4, columnspan=3)
 
         self.update_login_status()
 
+    def not_logged_in_warning(self):
+        # Clear the window
+        self.clear_window()
+
+        # Display the warning message
+        tk.Label(self.root, text="Warning", font=("Helvetica", 14), fg="red").grid(row=0, column=0, columnspan=2,
+                                                                                   pady=10)
+        tk.Label(self.root, text="Please login first", font=("Helvetica", 16),fg="red").grid(row=1, column=0, columnspan=2, pady=5)
+
+        # Create buttons to redirect the user
+        tk.Button(self.root, text="Go to Sign Up Page", command=self.show_sign_up_page).grid(row=2, column=0, padx=10,
+                                                                                             pady=5)
+        tk.Button(self.root, text="Go to Main Page", command=self.create_main_page).grid(row=2, column=1, padx=10,
+                                                                                         pady=5)
     def show_sign_in_page(self):
         # Clear the window and create sign-in page elements
         self.clear_window()
@@ -2153,8 +2171,8 @@ class BookstoreApp:
             self.logout_button.destroy()
         if hasattr(self, 'msg_box_button'):
             self.msg_box_button.destroy()
-        if hasattr(self, 'search_results_listbox'):
-            self.search_results_listbox.destroy()
+        # if hasattr(self, 'search_results_listbox'):
+        #     self.search_results_listbox.destroy()
         if hasattr(self, 'add_to_cart_button'):
             self.add_to_cart_button.destroy()
         if hasattr(self, 'cart_button'):
