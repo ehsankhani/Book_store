@@ -17,6 +17,7 @@ class BookstoreApp:
         self.is_logged_in = False
         self.logged_in_username = None
         self.logged_in_lastName = None
+        self.logged_in_id = None
         self.is_admin = False  # Flag to indicate admin login status
         self.manager_id = None
         self.cart = {}
@@ -170,6 +171,7 @@ class BookstoreApp:
             self.is_logged_in = True
             self.logged_in_username = user[1]  # Assuming the name is in the fourth column
             self.logged_in_lastName = user[4]  # last name
+            self.logged_in_id = user[0]  # first name
         else:
             messagebox.showerror("Error", "Invalid username or password.")
             self.is_logged_in = False
@@ -2218,7 +2220,7 @@ class BookstoreApp:
             self.search_entry = tk.Entry(self.root)
             self.search_entry.grid(row=0, column=1)
             tk.Button(self.root, text="Search", command=self.search_books).grid(row=0, column=2)
-            self.search_results_listbox = tk.Listbox(self.root)
+            self.search_results_listbox = tk.Listbox(self.root,height=10,width=100)
             self.search_results_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
 
             # Add button to add books to cart
@@ -2234,15 +2236,59 @@ class BookstoreApp:
             self.checkout_button.grid(row=2, column=3)
 
             # Get random books from the recommendation_system.py #adjust to see the count of books in the recommendation
-            random_books = self.recommendation_system.get_random_books(3)
+            recommendations = self.recommendation_system.get_recommendations(self.logged_in_username, 3)
 
-            # Display random books in the listbox
-            for book in random_books:
-                book_info = f"Title: {book[1]}, Author: {book[2]}, Publisher: {book[3]}, ISBN: {book[4]}"
-                self.search_results_listbox.insert(tk.END, book_info)
+            # Display books in the listbox
+            for book in recommendations:
+                # Extract book information
+                book_id, category = book
+
+                # Fetch additional details of the book using the book_id
+                self.cursor.execute("SELECT title, author FROM books WHERE book_id = %s", (book_id,))
+                book_info = self.cursor.fetchone()
+                if book_info:
+                    title, author = book_info
+                    book_info_str = f"Title: {title}, Author: {author}"
+                    self.search_results_listbox.insert(tk.END, book_info_str)
+                else:
+                    # Handle case where book information is not found
+                    print(f"Book with ID {book_id} not found in database.")
+            self.inbox_alert()
         else:
             self.welcome_label = tk.Label(self.root, text="not logged in", fg="red")
             self.welcome_label.grid(row=3, columnspan=3)
+
+    def inbox_alert(self):
+        # Get the user's inbox content
+        self.cursor.execute("SELECT inbox FROM users WHERE user_id = %s", (self.logged_in_id,))
+        inbox_content = self.cursor.fetchone()
+
+        if inbox_content is not None:
+            inbox_content = inbox_content[0]  # Extract the inbox content
+            if inbox_content and len(inbox_content) > 250:
+                # Display an alert message
+                messagebox.showwarning("Inbox Alert",
+                                       "We highly recommend to empty the inbox or it will be deleted.")
+
+                # Create a new window for inbox management
+                inbox_window = tk.Toplevel(self.root)
+                inbox_window.title("Inbox Management")
+
+                # Add buttons to manage the inbox
+                tk.Button(inbox_window, text="Show Inbox", command=self.show_message_box).pack()
+                tk.Button(inbox_window, text="Delete Inbox", command=self.delete_inbox).pack()
+                tk.Button(inbox_window, text="Back", command=inbox_window.destroy).pack()
+            if inbox_content and len(inbox_content) > 380:
+                self.delete_inbox()
+        else:
+            # Handle case where no inbox content is found
+            messagebox.showinfo("Message Box", "No messages in the message box.")
+
+    def delete_inbox(self):
+        # Clear the inbox content
+        self.cursor.execute("UPDATE users SET inbox = NULL WHERE user_id = %s", (self.logged_in_id,))
+        self.mydb.commit()  # Commit the transaction
+        messagebox.showinfo("Success", "Inbox deleted successfully.")
 
     def show_message_box(self):
         # Remember the current page
