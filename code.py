@@ -3,10 +3,11 @@ from tkinter import messagebox, scrolledtext, simpledialog
 from DataBase_Connection import get_database_connection
 import mysql.connector
 import datetime
+# import random
 from decimal import Decimal
 import re
 from Reports import ManagerReports  # Import the Reports class from reports.py
-
+from recommendation_system import RecommendationSystem
 # import traceback
 
 class BookstoreApp:
@@ -19,6 +20,7 @@ class BookstoreApp:
         self.is_admin = False  # Flag to indicate admin login status
         self.manager_id = None
         self.cart = {}
+        self.recommendation_system = RecommendationSystem()
 
         # Get the database connection
         self.mydb, self.cursor = get_database_connection()
@@ -422,6 +424,7 @@ class BookstoreApp:
         back_button = tk.Button(inbox_window, text="Back", command=self.open_admin_page)
         back_button.pack(pady=10)
 
+
     def open_user_orders(self):
         # Clear the window
         self.clear_window()
@@ -440,11 +443,11 @@ class BookstoreApp:
         if orders:
             # Create a frame to hold the order details
             order_frame = tk.Frame(user_orders_window)
-            order_frame.pack(padx=10, pady=10)
+            order_frame.pack(padx=20, pady=20)
 
             # Add labels to display column names
-            column_names = ["Order ID", "User ID", "ISBN", "Book Name", "category", "Quantity", "Price", "Purchase Date",
-                            "Credit Card Type", "Credit Card Number", "Purchase Status"]
+            column_names = ["Order ID", "User ID", "book_id", "ISBN", "Book Name", "category", "Quantity", "Price",
+                            "Purchase Date", "Credit Card Type", "Credit Card Number", "Purchase Status"]
             for col, column_name in enumerate(column_names):
                 tk.Label(order_frame, text=column_name, font=("Helvetica", 10, "bold")).grid(row=0, column=col, padx=5,
                                                                                              pady=5)
@@ -510,6 +513,12 @@ class BookstoreApp:
         self.cursor.execute(admin_info_query)
         admin_info = self.cursor.fetchone()
 
+        get_order = "SELECT book_id from purchases WHERE purchase_id = %s"
+        self.cursor.execute(get_order, (order_id,))
+        book_id_tuple = self.cursor.fetchone()
+        book_id = book_id_tuple[0]  # Extract the integer value from the tuple
+
+
         if admin_info:
             admin_id, admin_username = admin_info
             submit_date = datetime.datetime.now()
@@ -525,7 +534,7 @@ class BookstoreApp:
             description = f"The purchase ID {order_id} was accepted by {admin_username}"
             self.cursor.execute(
                 "INSERT INTO admin_records (admin_id, action_type, book_id, timestamp, description) VALUES (%s, %s, %s, %s, %s)",
-                (admin_id, "Accept Order", order_id, submit_date, description))
+                (admin_id, "Accept Order", book_id, submit_date, description))
             self.mydb.commit()  # Commit the transaction
             self.refresh_database_connection()
 
@@ -587,6 +596,11 @@ class BookstoreApp:
         self.cursor.execute(admin_info_query)
         admin_info = self.cursor.fetchone()
 
+        get_order = "SELECT book_id from purchases WHERE purchase_id = %s"
+        self.cursor.execute(get_order, (order_id,))
+        book_id_tuple = self.cursor.fetchone()
+        book_id = book_id_tuple[0]  # Extract the integer value from the tuple
+
         if admin_info:
             admin_id, admin_username = admin_info
             submit_date = datetime.datetime.now()
@@ -603,7 +617,7 @@ class BookstoreApp:
             self.cursor.execute(
                 "INSERT INTO admin_records (admin_id, action_type, book_id, timestamp, description) VALUES"
                 " (%s, %s, %s, %s, %s)",
-                (admin_id, "Decline Order", order_id, submit_date, description))
+                (admin_id, "Decline Order", book_id, submit_date, description))
             self.mydb.commit()  # Commit the transaction
             self.refresh_database_connection()
 
@@ -2131,12 +2145,12 @@ class BookstoreApp:
             title, author = book_info.split(" by ")
 
             # Retrieve book details from the database using title and author
-            self.cursor.execute("SELECT isbn, price, category FROM books WHERE title = %s AND author = %s",
+            self.cursor.execute("SELECT book_id, isbn, price, category FROM books WHERE title = %s AND author = %s",
                                 (title, author))
             book_data = self.cursor.fetchone()
 
             if book_data:
-                book_isbn, book_price, book_category = book_data
+                book_id, book_isbn, book_price, book_category = book_data
                 purchase_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                 # Fetch credit card details from the credit card table
@@ -2148,10 +2162,10 @@ class BookstoreApp:
 
                     # Insert purchase information into the purchase table
                     self.cursor.execute(
-                        "INSERT INTO purchases (user_id, isbn, book_name, category, quantity, price, purchase_date, "
+                        "INSERT INTO purchases (user_id, book_id, isbn, book_name, category, quantity, price, purchase_date, "
                         "credit_card_type, credit_card_number, purchase_status) "
-                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                        (user_id, book_isbn, title, book_category, quantity, book_price, purchase_date, card_type, card_number,
+                        "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                        (user_id, book_id, book_isbn, title, book_category, quantity, book_price, purchase_date, card_type, card_number,
                          'AwaitingResponse'))
 
                     # Commit the transaction
@@ -2218,6 +2232,14 @@ class BookstoreApp:
             # Add button to proceed to checkout
             self.checkout_button = tk.Button(self.root, text="Proceed to Checkout", command=self.proceed_to_checkout)
             self.checkout_button.grid(row=2, column=3)
+
+            # Get random books from the recommendation_system.py #adjust to see the count of books in the recommendation
+            random_books = self.recommendation_system.get_random_books(3)
+
+            # Display random books in the listbox
+            for book in random_books:
+                book_info = f"Title: {book[1]}, Author: {book[2]}, Publisher: {book[3]}, ISBN: {book[4]}"
+                self.search_results_listbox.insert(tk.END, book_info)
         else:
             self.welcome_label = tk.Label(self.root, text="not logged in", fg="red")
             self.welcome_label.grid(row=3, columnspan=3)
