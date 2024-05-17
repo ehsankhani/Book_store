@@ -211,7 +211,7 @@ class BookstoreApp:
         # Check if the user exists and credentials are correct
         # Perform authentication for admin here, using a separate table for admins
         # Replace 'admin_table' with the actual table name for admins
-        self.cursor.execute("SELECT admin_id FROM admin WHERE username = %s AND password = %s", (username, password))
+        self.cursor.execute("SELECT admin_id FROM admin WHERE username = %s AND password = %s AND date_out IS NULL", (username, password))
         admin_id = self.cursor.fetchone()
         if admin_id:
             # Sign-in successful
@@ -235,7 +235,8 @@ class BookstoreApp:
         # Check if the user exists and credentials are correct
         # Perform authentication for manager here, using a separate table for managers
         # Replace 'manager_table' with the actual table name for managers
-        self.cursor.execute("SELECT * FROM manager WHERE full_name = %s AND password = %s", (username, password))
+        self.cursor.execute("SELECT * FROM manager WHERE full_name = %s AND password = %s AND date_out IS NULL",
+                            (username, password))
         manager = self.cursor.fetchone()
         if manager:
             # Sign-in successful
@@ -268,10 +269,14 @@ class BookstoreApp:
         inbox_button = tk.Button(self.root, text="Inbox", command=self.open_admin_inbox)
         inbox_button.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
 
+        retirement_button = tk.Button(self.root, text="Retirement", command=self.open_admin_retirement_page)
+        retirement_button.grid(row=5, column=0, padx=10, pady=5)
+
         # Create a back button
         back_button = tk.Button(self.root, text="Back", command=self.go_back)
         back_button.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
-
+    def open_admin_retirement_page(self):
+        self.retirement.show_retire_admin_page(self.root)
     def open_place_orders_window(self):
         # Create a new window for placing orders
         place_orders_window = tk.Toplevel(self.root)
