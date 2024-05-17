@@ -10,6 +10,7 @@ import re
 from Reports import ManagerReports  # Import the Reports class from reports.py
 from recommendation_system import RecommendationSystem
 # import traceback
+from Retirement import Retirement
 
 class BookstoreApp:
     def __init__(self, root):
@@ -23,6 +24,7 @@ class BookstoreApp:
         self.manager_id = None
         self.cart = {}
         self.recommendation_system = RecommendationSystem()
+        self.retirement = Retirement(self)
 
         # Get the database connection
         self.mydb, self.cursor = get_database_connection()
@@ -1097,9 +1099,15 @@ class BookstoreApp:
         reports_button = tk.Button(self.root, text="Reports", command=self.open_reports)
         reports_button.grid(row=4, column=0, padx=10, pady=5)
 
+        retirement_button = tk.Button(self.root, text="Retirement", command=self.open_retirement_page)
+        retirement_button.grid(row=5, column=0, padx=10, pady=5)
+
         logout_button = tk.Button(self.root, text="Logout", command=self.create_main_page)
         logout_button.grid(row=1, column=1, padx=10, pady=5)
 
+        # Add a method to open the retirement page
+    def open_retirement_page(self):
+        self.retirement.show_retire_manager_page(self.root)
     def open_reports(self):
         reports_manager = ManagerReports(self.root)  # Create an instance of the Reports class
         # Call the manager_report method on the instance to open the reports window
