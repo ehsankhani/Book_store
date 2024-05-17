@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from tkinter import messagebox, scrolledtext, simpledialog
 from DataBase_Connection import get_database_connection
 import mysql.connector
@@ -35,11 +36,21 @@ class BookstoreApp:
 
         # GUI elements for main page
         tk.Label(self.root, text="Search:").grid(row=0, column=0)
+
+        # Entry for search text
         self.search_entry = tk.Entry(self.root)
         self.search_entry.grid(row=0, column=1)
-        tk.Button(self.root, text="Search", command=self.search_books).grid(row=0, column=2)
-        self.search_results_listbox = tk.Listbox(self.root)
-        self.search_results_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
+
+        # Combobox for search type
+        self.search_type = ttk.Combobox(self.root, values=["Title", "Author", "Publisher"])
+        self.search_type.grid(row=0, column=3)
+        self.search_type.current(0)  # Set default value
+
+        tk.Button(self.root, text="Search in :", command=self.search_books, width=20).grid(row=0, column=2)
+
+
+        self.search_results_listbox = tk.Listbox(self.root, height=10, width=100)
+        self.search_results_listbox.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
 
         # Buttons for sign-in and sign-up
         tk.Button(self.root, text="Sign In", command=self.show_sign_in_page).grid(row=2, column=0)
@@ -53,7 +64,7 @@ class BookstoreApp:
         # New buttons for cart
         tk.Button(self.root, text="Add to Cart", command=self.add_to_cart).grid(row=4, column=0)
         tk.Button(self.root, text="View Cart", command=self.view_cart).grid(row=4, column=1)
-        tk.Button(self.root, text="proceed to checkout", command=self.not_logged_in_warning).grid(row=4, column=2)
+        tk.Button(self.root, text="Proceed to Checkout", command=self.not_logged_in_warning).grid(row=4, column=2)
 
         self.login_status_label = tk.Label(self.root, text="", fg="red")
         self.login_status_label.grid(row=4, columnspan=3)
@@ -1982,27 +1993,26 @@ class BookstoreApp:
             widget.destroy()
 
     def search_books(self):
-        # Clear any previous search results
+        # Get the search type and query
+        search_query = self.search_entry.get()
+        search_type = self.search_type.get().lower()  # Get selected search type
+
+        # Clear previous search results
         self.search_results_listbox.delete(0, tk.END)
 
-        # Get the search query from the entry field
-        search_query = self.search_entry.get()
+        # Define the search query based on the selected search type
+        if search_type == "title":
+            self.cursor.execute("SELECT title, author FROM books WHERE title LIKE %s", ('%' + search_query + '%',))
+        elif search_type == "author":
+            self.cursor.execute("SELECT title, author FROM books WHERE author LIKE %s", ('%' + search_query + '%',))
+        elif search_type == "publisher":
+            self.cursor.execute("SELECT title, author FROM books WHERE publisher LIKE %s", ('%' + search_query + '%',))
 
-        # Execute SQL query to search for books
-        search_sql = "SELECT * FROM books WHERE title LIKE %s OR author LIKE %s"
-        search_params = (f"%{search_query}%", f"%{search_query}%")
-        self.cursor.execute(search_sql, search_params)
+        # Fetch and display the search results
         search_results = self.cursor.fetchall()
-
-        # Display search results in the GUI
-        if search_results:
-            for book in search_results:
-                # Format the book information
-                book_info = f"Title: {book[3]}, Author: {book[1]}"
-                # Insert book information into the Listbox
-                self.search_results_listbox.insert(tk.END, book_info)
-        else:
-            messagebox.showinfo("Search", "No books found matching the search query.")
+        for result in search_results:
+            title, author = result
+            self.search_results_listbox.insert(tk.END, f"Title: {title}, Author: {author}")
 
     def add_to_cart(self):
         # Get the selected book from the search results listbox
@@ -2217,11 +2227,20 @@ class BookstoreApp:
 
             # GUI elements for main page
             tk.Label(self.root, text="Search:").grid(row=0, column=0)
+
+            # Entry for search text
             self.search_entry = tk.Entry(self.root)
             self.search_entry.grid(row=0, column=1)
-            tk.Button(self.root, text="Search", command=self.search_books).grid(row=0, column=2)
-            self.search_results_listbox = tk.Listbox(self.root,height=10,width=100)
-            self.search_results_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
+
+            # Combobox for search type
+            self.search_type = ttk.Combobox(self.root, values=["Title", "Author", "Publisher"])
+            self.search_type.grid(row=0, column=3)
+            self.search_type.current(0)  # Set default value
+
+            tk.Button(self.root, text="Search in :", command=self.search_books, width=20).grid(row=0, column=2)
+
+            self.search_results_listbox = tk.Listbox(self.root, height=10, width=100)
+            self.search_results_listbox.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
 
             # Add button to add books to cart
             self.add_to_cart_button = tk.Button(self.root, text="Add to Cart", command=self.add_to_cart)
