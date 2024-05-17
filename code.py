@@ -52,6 +52,9 @@ class BookstoreApp:
         self.search_results_listbox = tk.Listbox(self.root, height=10, width=100)
         self.search_results_listbox.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
 
+        # Button for showing book info
+        tk.Button(self.root, text="Book Info", command=self.show_book_info).grid(row=2, column=3)
+
         # Buttons for sign-in and sign-up
         tk.Button(self.root, text="Sign In", command=self.show_sign_in_page).grid(row=2, column=0)
         tk.Button(self.root, text="Sign Up", command=self.show_sign_up_page).grid(row=2, column=1)
@@ -2254,6 +2257,9 @@ class BookstoreApp:
             self.checkout_button = tk.Button(self.root, text="Proceed to Checkout", command=self.proceed_to_checkout)
             self.checkout_button.grid(row=2, column=3)
 
+            # Button for showing book info
+            tk.Button(self.root, text="Book Info", command=self.show_book_info).grid(row=3, column=3)
+
             # Get random books from the recommendation_system.py #adjust to see the count of books in the recommendation
             recommendations = self.recommendation_system.get_recommendations(self.logged_in_username, 3)
 
@@ -2276,6 +2282,37 @@ class BookstoreApp:
         else:
             self.welcome_label = tk.Label(self.root, text="not logged in", fg="red")
             self.welcome_label.grid(row=3, columnspan=3)
+
+    def show_book_info(self):
+        selected_index = self.search_results_listbox.curselection()
+        if selected_index:
+            selected_book = self.search_results_listbox.get(selected_index)
+            book_title, book_author = self.parse_book_info(selected_book)
+            self.cursor.execute("SELECT * FROM books WHERE title = %s AND author = %s", (book_title, book_author))
+            book_info = self.cursor.fetchone()
+            if book_info:
+                self.book_info(book_info)
+            else:
+                messagebox.showerror("Error", "Book information not found.")
+        else:
+            messagebox.showwarning("No selection", "Please select a book from the list.")
+
+    def parse_book_info(self, book_info_str):
+        # Extract book title and author from the book info string
+        parts = book_info_str.split(", Author: ")
+        title = parts[0].replace("Title: ", "")
+        author = parts[1]
+        return title, author
+
+    def book_info(self, book_info):
+        # Create a new window to display the book info
+        info_window = tk.Toplevel(self.root)
+        info_window.title("Book Info")
+        tk.Label(info_window, text=f"Title: {book_info[3]}").pack()
+        tk.Label(info_window, text=f"Author: {book_info[1]}").pack()
+        tk.Label(info_window, text=f"Publisher: {book_info[6]}").pack()
+        tk.Label(info_window, text=f"Category: {book_info[2]}").pack()
+        tk.Label(info_window, text=f"Review: {book_info[5]}").pack()
 
     def inbox_alert(self):
         # Get the user's inbox content
