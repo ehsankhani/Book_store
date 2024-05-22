@@ -5,7 +5,7 @@ from DataBase_Connection import get_database_connection
 import mysql.connector
 import datetime
 # import random
-from decimal import Decimal
+# from decimal import Decimal
 import re
 from Reports import ManagerReports  # Import the Reports class from reports.py
 from recommendation_system import RecommendationSystem
@@ -833,6 +833,13 @@ class BookstoreApp:
     def insert_book(self, author, category, title, isbn, review, publisher, min_property, present_property, price,
                     publish_year):
         try:
+            # Check if the ISBN is unique
+            self.cursor.execute("SELECT COUNT(*) FROM books WHERE ISBN = %s", (isbn,))
+            result = self.cursor.fetchone()
+            if result[0] > 0:
+                # ISBN already exists
+                messagebox.showerror("Error", "ISBN already exists. Please enter a unique ISBN.")
+                return
             # Insert the book details into the database
             self.cursor.execute(
                 "INSERT INTO books (author, category, title, ISBN, review, publisher, minimum_property, present_stock, price, publish_year, catalog_flag) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
@@ -1245,6 +1252,13 @@ class BookstoreApp:
                 publish_year = publish_year_entry.get()
                 catalog_flag = 1  # Default value
 
+                # Check if the ISBN is unique
+                self.cursor.execute("SELECT COUNT(*) FROM books WHERE ISBN = %s", (isbn,))
+                result = self.cursor.fetchone()
+                if result[0] > 0:
+                    # ISBN already exists
+                    messagebox.showerror("Error", "ISBN already exists. Please enter a unique ISBN.")
+                    return
                 # Insert the book into the database
                 insert_query = "INSERT INTO books (author, category, title, review, isbn,  publisher, minimum_property, present_stock, price, publish_year, catalog_flag) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 self.cursor.execute(insert_query, (
@@ -1416,16 +1430,16 @@ class BookstoreApp:
                         publish_year_entry.delete(0, tk.END)
                         publish_year_entry.insert(tk.END, book_details[10])
 
-                        # Track changes and store old values
-                        for field, index in field_indices.items():
-                            old_value = old_values[field]
-                            new_value = book_details[index]
-                            print(f"Field: {field}, Old Value: {old_value}, New Value: {new_value}")
-                            if field == 'price':
-                                old_value = Decimal(old_value) if old_value else Decimal(0)
-                                new_value = Decimal(new_value)
-                            if old_value != new_value:
-                                changes[field] = (old_value, new_value)
+                        # # Track changes and store old values (this is for the test case)
+                        # for field, index in field_indices.items():
+                        #     old_value = old_values[field]
+                        #     new_value = book_details[index]
+                        #     print(f"Field: {field}, Old Value: {old_value}, New Value: {new_value}")
+                        #     if field == 'price':
+                        #         old_value = Decimal(old_value) if old_value else Decimal(0)
+                        #         new_value = Decimal(new_value)
+                        #     if old_value != new_value:
+                        #         changes[field] = (old_value, new_value)
                     else:
                         print("No book found with the provided ID.")
                         return None
@@ -1627,23 +1641,27 @@ class BookstoreApp:
             except mysql.connector.Error as err:
                 print("Error:", err)
 
-        # Create a new window for book operations
-        book_operations_window = tk.Toplevel(self.root)
-        book_operations_window.title("Book Operations")
+        # Check if the main window (self.root) exists before creating a new Toplevel window
+        if self.root.winfo_exists():
+            book_operations_window = tk.Toplevel(self.root)
+            book_operations_window.title("Book Operations")
 
-        # Buttons for book operations
-        insert_button = tk.Button(book_operations_window, text="Insert", command=insert_book)
-        insert_button.pack(pady=10)
+            # Buttons for book operations
+            insert_button = tk.Button(book_operations_window, text="Insert", command=insert_book)
+            insert_button.pack(pady=10)
 
-        modify_button = tk.Button(book_operations_window, text="Modify", command=modify_book)
-        modify_button.pack(pady=10)
+            modify_button = tk.Button(book_operations_window, text="Modify", command=modify_book)
+            modify_button.pack(pady=10)
 
-        delete_button = tk.Button(book_operations_window, text="Delete", command=delete_book)
-        delete_button.pack(pady=10)
+            delete_button = tk.Button(book_operations_window, text="Delete", command=delete_book)
+            delete_button.pack(pady=10)
 
-        # Back button
-        back_button = tk.Button(book_operations_window, text="Back", command=book_operations_window.destroy)
-        back_button.pack(pady=10)
+            # Back button
+            back_button = tk.Button(book_operations_window, text="Back", command=self.open_manager_page)
+            back_button.pack(pady=10)
+        else:
+            messagebox.showerror("Error", "Main window has been destroyed. Cannot open book operations.")
+
     def open_manager_inbox(self):
         # Clear the window
         self.clear_window()
@@ -1656,15 +1674,15 @@ class BookstoreApp:
 
         # Retrieve messages from the manager's inbox
         self.cursor.execute("SELECT msg_box FROM manager WHERE manager_id = %s", (self.manager_id,))
-        inbox_messages = self.cursor.fetchall()
+        inbox_messages = self.cursor.fetchone()
 
-        if inbox_messages:
+        # Create a listbox to display message subjects
+        message_listbox = tk.Listbox(self.root, width=50, height=10)
+        message_listbox.pack(fill="both", expand=True, padx=10, pady=10)
+
+        if inbox_messages and inbox_messages[0]:
             # Split messages by comma to separate them
-            messages = inbox_messages[0][0].split(',')
-
-            # Create a listbox to display message subjects
-            message_listbox = tk.Listbox(self.root, width=50, height=10)
-            message_listbox.pack(fill="both", expand=True, padx=10, pady=10)
+            messages = inbox_messages[0].split(',')
 
             # Populate the listbox with message subjects (without quantity)
             for msg in messages:
@@ -1674,6 +1692,9 @@ class BookstoreApp:
                     message_listbox.insert(tk.END, subject)
                 else:
                     message_listbox.insert(tk.END, msg)  # Insert the whole message
+            else:
+                # If there are no messages, show a message in the listbox
+                message_listbox.insert(tk.END, "No messages in the inbox.")
 
             # Function to display full message on selection
             def show_full_message(event):
