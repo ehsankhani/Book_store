@@ -11,6 +11,8 @@ from Reports import ManagerReports  # Import the Reports class from reports.py
 from recommendation_system import RecommendationSystem
 # import traceback
 from Retirement import Retirement
+import os
+from PIL import Image, ImageTk
 
 class BookstoreApp:
     def __init__(self, root):
@@ -2342,11 +2344,41 @@ class BookstoreApp:
         # Create a new window to display the book info
         info_window = tk.Toplevel(self.root)
         info_window.title("Book Info")
-        tk.Label(info_window, text=f"Title: {book_info[3]}").pack()
-        tk.Label(info_window, text=f"Author: {book_info[1]}").pack()
-        tk.Label(info_window, text=f"Publisher: {book_info[6]}").pack()
-        tk.Label(info_window, text=f"Category: {book_info[2]}").pack()
-        tk.Label(info_window, text=f"Review: {book_info[5]}").pack()
+
+        # Create a frame with black border
+        frame = tk.Frame(info_window, bd=2, relief="solid")
+        frame.pack(padx=10, pady=10)
+
+        # Display text information
+        tk.Label(frame, text=f"Title: {book_info[3]}").pack()
+        tk.Label(frame, text=f"Author: {book_info[1]}").pack()
+        tk.Label(frame, text=f"Publisher: {book_info[6]}").pack()
+        tk.Label(frame, text=f"Category: {book_info[2]}").pack()
+        tk.Label(frame, text=f"Review: {book_info[5]}").pack()
+
+        # Check if an image file exists for the book
+        image_file = f"book_pics/{book_info[3]}.jpg"
+        if os.path.exists(image_file):
+            # Load and display the image
+            # Open the JPEG image file using PIL
+            image = Image.open(image_file)
+
+            # Convert the image to a Tkinter-compatible format
+            tk_image = ImageTk.PhotoImage(image)
+
+            # Create a Tkinter label to display the image in the frame
+            image_label = tk.Label(frame, image=tk_image)
+            image_label.image = tk_image  # Keep a reference to avoid garbage collection
+            image_label.pack(pady=10)
+
+            # Add a black frame around the image label
+            image_label.config(bd=2, relief="solid")
+        else:
+            # Display a message if no image file is found
+            tk.Label(frame, text="No image available").pack()
+
+        # Run the Tkinter event loop for the info_window
+        info_window.mainloop()
 
     def inbox_alert(self):
         # Get the user's inbox content
