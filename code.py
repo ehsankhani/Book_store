@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import messagebox, scrolledtext, simpledialog
+from tkinter import messagebox, scrolledtext, simpledialog, filedialog
 from DataBase_Connection import get_database_connection
 import mysql.connector
 import datetime
@@ -13,6 +13,7 @@ from recommendation_system import RecommendationSystem
 from Retirement import Retirement
 import os
 from PIL import Image, ImageTk
+import shutil
 
 class BookstoreApp:
     def __init__(self, root):
@@ -762,6 +763,21 @@ class BookstoreApp:
         back_button = tk.Button(self.root, text="Back", command=self.open_admin_page)
         back_button.pack(pady=5)
 
+    def select_book_image(self, title):
+        # Open file dialog to select an image file
+        file_path = filedialog.askopenfilename(
+            filetypes=[("JPEG files", "*.jpg"), ("All files", "*.*")]
+        )
+
+        if file_path:
+            try:
+                # Define the new file path
+                new_file_path = f"book_pics/{title}.jpg"
+                # Copy and rename the selected file
+                shutil.copy(file_path, new_file_path)
+                messagebox.showinfo("Success", f"Image successfully saved as {new_file_path}")
+            except Exception as e:
+                messagebox.showerror("Error", f"An error occurred: {e}")
     def insert_book_ui(self):
         # Clear the window
         self.clear_window()
@@ -817,6 +833,10 @@ class BookstoreApp:
             publish_year_entry.get()
         ))
         submit_button.grid(row=10, columnspan=2)
+
+        # Button to select book image
+        image_button = tk.Button(self.root, text="Select Image", command=lambda: self.select_book_image(title_entry.get()))
+        image_button.grid(row=11, columnspan=2)
 
         # Create back button
         self.create_back_button()
@@ -1289,57 +1309,65 @@ class BookstoreApp:
             # Clear the current page
             self.clear_window()
 
-            # Labels and entry fields for book information
-            tk.Label(root, text="Author:").grid(row=0, column=0, padx=10, pady=5)
-            author_entry = tk.Entry(root)
-            author_entry.grid(row=0, column=1, padx=10, pady=5)
+            # Create labels and entry fields for book details
+            tk.Label(self.root, text="Author:").grid(row=0, column=0)
+            author_entry = tk.Entry(self.root)
+            author_entry.grid(row=0, column=1)
 
-            tk.Label(root, text="Category:").grid(row=1, column=0, padx=10, pady=5)
+            tk.Label(self.root, text="Category:").grid(row=1, column=0)
             category_var = tk.StringVar()
-            categories = ["Fiction", "Poetry", "Children", "Classic", "Romance", "History", "Psychology",
-                          "Travel/Adventure", "Biography/Autobiography"]
-            category_combobox = tk.OptionMenu(root, category_var, *categories)
-            category_combobox.grid(row=1, column=1, padx=10, pady=5)
+            categories = ["Fiction", "poetry", "Children", "classic", "romance", "History",
+                          "Psychology", "Travel/Adventure", "Biography/Autobiography"]
+            category_combobox = tk.OptionMenu(self.root, category_var, *categories)
+            category_combobox.grid(row=1, column=1)
 
-            tk.Label(root, text="Title:").grid(row=2, column=0, padx=10, pady=5)
-            title_entry = tk.Entry(root)
-            title_entry.grid(row=2, column=1, padx=10, pady=5)
+            tk.Label(self.root, text="Title:").grid(row=2, column=0)
+            title_entry = tk.Entry(self.root)
+            title_entry.grid(row=2, column=1)
 
-            tk.Label(root, text="ISBN:").grid(row=3, column=0, padx=10, pady=5)
-            isbn_entry = tk.Entry(root)
-            isbn_entry.grid(row=3, column=1, padx=10, pady=5)
+            tk.Label(self.root, text="ISBN:").grid(row=3, column=0)
+            isbn_entry = tk.Entry(self.root)
+            isbn_entry.grid(row=3, column=1)
 
-            tk.Label(root, text="Review:").grid(row=4, column=0, padx=10, pady=5)
-            review_entry = tk.Entry(root)
-            review_entry.grid(row=4, column=1, padx=10, pady=5)
+            tk.Label(self.root, text="Review:").grid(row=4, column=0)
+            review_entry = tk.Entry(self.root)
+            review_entry.grid(row=4, column=1)
 
-            tk.Label(root, text="Publisher:").grid(row=5, column=0, padx=10, pady=5)
-            publisher_entry = tk.Entry(root)
-            publisher_entry.grid(row=5, column=1, padx=10, pady=5)
+            tk.Label(self.root, text="Publisher:").grid(row=5, column=0)
+            publisher_entry = tk.Entry(self.root)
+            publisher_entry.grid(row=5, column=1)
 
-            tk.Label(root, text="Minimum Property:").grid(row=6, column=0, padx=10, pady=5)
-            minimum_property_entry = tk.Entry(root)
-            minimum_property_entry.grid(row=6, column=1, padx=10, pady=5)
+            tk.Label(self.root, text="Min. Property:").grid(row=6, column=0)
+            min_property_entry = tk.Entry(self.root)
+            min_property_entry.grid(row=6, column=1)
 
-            tk.Label(root, text="Present Stock:").grid(row=7, column=0, padx=10, pady=5)
-            present_stock_entry = tk.Entry(root)
-            present_stock_entry.grid(row=7, column=1, padx=10, pady=5)
+            tk.Label(self.root, text="Present Property:").grid(row=7, column=0)
+            present_property_entry = tk.Entry(self.root)
+            present_property_entry.grid(row=7, column=1)
 
-            tk.Label(root, text="Price:").grid(row=8, column=0, padx=10, pady=5)
-            price_entry = tk.Entry(root)
-            price_entry.grid(row=8, column=1, padx=10, pady=5)
+            tk.Label(self.root, text="Price:").grid(row=8, column=0)
+            price_entry = tk.Entry(self.root)
+            price_entry.grid(row=8, column=1)
 
-            tk.Label(root, text="Publish Year:").grid(row=9, column=0, padx=10, pady=5)
-            publish_year_entry = tk.Entry(root)
-            publish_year_entry.grid(row=9, column=1, padx=10, pady=5)
+            tk.Label(self.root, text="Publish Year:").grid(row=9, column=0)
+            publish_year_entry = tk.Entry(self.root)
+            publish_year_entry.grid(row=9, column=1)
 
-            # Submit button
-            submit_button = tk.Button(root, text="Submit", command=submit_book)
-            submit_button.grid(row=10, column=0, columnspan=2, pady=10)
+            # Button to submit book details
+            submit_button = tk.Button(self.root, text="Submit", command=lambda: self.insert_book(
+                author_entry.get(), category_var.get(), title_entry.get(), isbn_entry.get(), review_entry.get(),
+                publisher_entry.get(), min_property_entry.get(), present_property_entry.get(), price_entry.get(),
+                publish_year_entry.get()
+            ))
+            submit_button.grid(row=10, columnspan=2)
 
-            # Create a button to open book operations
-            back_button = tk.Button(self.root, text="Back", command=go_back_to_operations)
-            back_button.grid(row=11, column=0, columnspan=2, pady=10)
+            # Button to select book image
+            image_button = tk.Button(self.root, text="Select Image",
+                                     command=lambda: self.select_book_image(title_entry.get()))
+            image_button.grid(row=11, columnspan=2)
+
+            # Create back button
+            self.create_back_button()
 
         # Function to handle modify operation
         def modify_book():
@@ -2359,9 +2387,11 @@ class BookstoreApp:
         # Check if an image file exists for the book
         image_file = f"book_pics/{book_info[3]}.jpg"
         if os.path.exists(image_file):
-            # Load and display the image
             # Open the JPEG image file using PIL
             image = Image.open(image_file)
+
+            # Resize the image to 500x500 pixels
+            image = image.resize((220, 300), Image.LANCZOS)
 
             # Convert the image to a Tkinter-compatible format
             tk_image = ImageTk.PhotoImage(image)
