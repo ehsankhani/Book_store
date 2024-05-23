@@ -298,6 +298,7 @@ class BookstoreApp:
         for book in books_data:
             book_listbox.insert(tk.END, f"{book[1]} (ID: {book[0]})")
 
+
         def show_book_details():
             # Get the selected book index
             selected_index = book_listbox.curselection()
@@ -324,6 +325,9 @@ class BookstoreApp:
         # Button to show book details
         show_details_button = tk.Button(place_orders_window, text="Show Details", command=show_book_details)
         show_details_button.grid(row=1, column=1, padx=10, pady=5)
+        # Create a back button
+        back_button = tk.Button(place_orders_window, text="back", command=self.open_admin_page)
+        back_button.grid(row=2, column=1, padx=10, pady=5)
 
     def place_order(self, new_quantity_entry, selected_book, confirm_button):
         # Disable the "Place Order" button to prevent multiple clicks
@@ -397,13 +401,16 @@ class BookstoreApp:
         message_listbox = tk.Listbox(inbox_window, width=50, height=10)
         message_listbox.pack(fill="both", expand=True, padx=10, pady=10)
 
-        if messages:
+        if messages and messages[0]:
             # Split messages by comma to separate them
             msg_parts = messages[0].split(',')
             for msg in msg_parts:
                 # Extract subject (order for book ID)
                 subject = msg.split(":")[0].strip()
                 message_listbox.insert(tk.END, subject)
+            else:
+                # If there are no messages, show a message in the listbox
+                message_listbox.insert(tk.END, "No messages in the inbox.")
 
             # Function to display full message on selection
             def show_full_message(event):
@@ -1195,6 +1202,8 @@ class BookstoreApp:
                                                                                    manager_id))
 
                 submit_button.grid(row=6, column=0, columnspan=2, padx=10, pady=5)
+                back_button = tk.Button(self.root, text="back", command=self.open_manager_page)
+                back_button.grid(row=6, column=1, padx=10, pady=5)
             else:
                 messagebox.showerror("Error", "No active manager found.")
         except mysql.connector.Error as err:
@@ -2210,10 +2219,7 @@ class BookstoreApp:
         purchase_button.pack()
 
     def purchase(self):
-        # Show a messagebox confirming that the order has been submitted
-        messagebox.showinfo("Order Submitted", "Your order has been submitted. Please wait for confirmation. "
-                                               "You can see the confirmation message in the inbox.")
-
+        self.refresh_database_connection()
         # Fetch user ID from the user table
         self.cursor.execute("SELECT user_id FROM users WHERE username = %s", (self.logged_in_username,))
         user_id = self.cursor.fetchone()[0]
@@ -2233,11 +2239,20 @@ class BookstoreApp:
                 purchase_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                 # Fetch credit card details from the credit card table
-                self.cursor.execute("SELECT card_type, card_number FROM credit_cards WHERE user_id = %s", (user_id,))
+                self.cursor.execute("SELECT card_type, card_number, exp_date FROM credit_cards WHERE user_id = %s", (user_id,))
                 credit_card_info = self.cursor.fetchone()
 
                 if credit_card_info:
-                    card_type, card_number = credit_card_info
+                    card_type, card_number, expiry_date = credit_card_info
+
+                    # expiry_date is already a datetime.date object, compare directly
+                    if expiry_date < datetime.datetime.now().date():
+                        # Credit card is expired, show a messagebox with an option to update card info
+                        response = messagebox.askyesno("Credit Card Expired",
+                                                       "Your credit card has expired. Do you want to update your credit card information?")
+                        if response:
+                            self.edit_selected_parameter_page()
+                        return  # Exit the purchase process
 
                     # Insert purchase information into the purchase table
                     self.cursor.execute(
@@ -2249,6 +2264,9 @@ class BookstoreApp:
 
                     # Commit the transaction
                     self.mydb.commit()
+        # Show a messagebox confirming that the order has been submitted
+        messagebox.showinfo("Order Submitted", "Your order has been submitted. Please wait for "
+                                               "confirmation.You can see the confirmation message in the inbox.")
 
         # Clear the cart after the purchase
         self.cart = {}
@@ -2285,7 +2303,7 @@ class BookstoreApp:
             # Show view and edit info buttons
             self.view_info_button = tk.Button(self.root, text="View Info", command=self.view_user_info)
             self.view_info_button.grid(row=4, column=1)
-            self.edit_info_button = tk.Button(self.root, text="Edit Info", command=self.edit_user_info)
+            self.edit_info_button = tk.Button(self.root, text="Edit Info", command=self.edit_selected_parameter_page)
             self.edit_info_button.grid(row=4, column=2)
 
             # Show Message Box button
@@ -2468,22 +2486,39 @@ class BookstoreApp:
 
         # Display user information in a dialog box
         if user_info:
-            user_info_text = f"Username: {user_info[1]}\nFirst Name: {user_info[3]}\nLast Name: {user_info[4]}\nCity: {user_info[5]}\nState: {user_info[6]}\nZip Code: {user_info[7]}"
+            user_info_text = (f"Username: {user_info[1]}\n"
+                              f"First Name: {user_info[3]}\n"
+                              f"Last Name: {user_info[4]}\n"
+                              f"City: {user_info[5]}\n"
+                              f"State: {user_info[6]}\n"
+                              f"Zip Code: {user_info[7]}"
+                              f"card Number: {user_info[8]}"
+                              f"exp date: {user_info[9]}"
+                              f"card type: {user_info[10]}")
             messagebox.showinfo("User Info", user_info_text)
         else:
             messagebox.showerror("Error", "Failed to retrieve user information.")
 
-    def edit_user_info(self):
-        # Clear the window
-        self.clear_window()
-
-        # Create the edit page
-        self.edit_selected_parameter_page()
+    # def edit_user_info(self):
+    #     # Clear the window
+    #     self.clear_window()
+    #
+    #     # Create the edit page
+    #     self.edit_selected_parameter_page()
 
 
     def edit_selected_parameter_page(self):
+        self.clear_window()
         # List of parameters
-        parameters = ["Password", "First Name", "Last Name", "City", "State", "Zip Code"]
+        parameters = ["Password",
+                      "First Name",
+                      "Last Name",
+                      "City",
+                      "State",
+                      "Zip Code",
+                      "card number",
+                      "exp date",
+                      "card type"]
 
         # Prompt user to select a parameter to edit
         selected_parameter = tk.StringVar(value=parameters[0])  # Default selection
@@ -2523,11 +2558,11 @@ class BookstoreApp:
                 # Update user information
                 self.cursor.execute(f"UPDATE users SET {parameter.lower().replace(' ', '_')} = %s WHERE username = %s",
                                     (new_value, self.logged_in_username))
-            elif parameter.lower() in ["credit card number", "expiry date", "card type"]:
+            elif parameter.lower() in ["card number", "exp date", "card type"]:
                 # Update credit card information
                 self.cursor.execute(
-                    f"UPDATE credit_cards SET {parameter.lower().replace(' ', '_')} = %s WHERE user_id = (SELECT user_id FROM users WHERE username = %s)",
-                    (new_value, self.logged_in_username))
+                    f"UPDATE credit_cards SET {parameter.lower().replace(' ', '_')} = %s WHERE user_id = %s",
+                    (new_value, self.logged_in_id))
 
             # Commit the changes to the database
             self.mydb.commit()
