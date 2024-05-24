@@ -477,6 +477,8 @@ class ManagerReports:
         except mysql.connector.Error as err:
             messagebox.showerror("Database Error", f"Failed to connect to the database: {err}")
 
+
+
 # # Example usage:
 # root = tk.Tk()
 # manager_reports = ManagerReports(root)

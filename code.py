@@ -1143,12 +1143,50 @@ class BookstoreApp:
         retirement_button = tk.Button(self.root, text="Retirement", command=self.open_retirement_page)
         retirement_button.grid(row=5, column=0, padx=10, pady=5)
 
+        inequallity_button = tk.Button(self.root, text="Check for inequallity", command=self.check_for_equality)
+        inequallity_button.grid(row=1, column=1, padx=10, pady=5)
+
         logout_button = tk.Button(self.root, text="Logout", command=self.create_main_page)
-        logout_button.grid(row=1, column=1, padx=10, pady=5)
+        logout_button.grid(row=2, column=1, padx=10, pady=5)
 
         # Add a method to open the retirement page
     def open_retirement_page(self):
         self.retirement.show_retire_manager_page(self.root)
+
+    def check_for_equality(self):
+        self.clear_window()
+        tk.Label(self.root, text="Stock Levels Check").grid(row=0, columnspan=2, padx=10, pady=10)
+
+        # Fetch the present stock and minimum property from the books table
+        self.cursor.execute("SELECT title, present_stock, minimum_property FROM books")
+        books = self.cursor.fetchall()
+
+        row = 1
+        for title, present_stock, min_property in books:
+            try:
+                # Convert present_stock and min_property to integers (or floats if needed)
+                present_stock = int(present_stock)
+                min_property = int(min_property)
+
+                if present_stock <= min_property * 1.1:  # If stock is near or below 10% above the minimum
+                    tk.Label(self.root,
+                             text=f"Warning: {title} stock is low. Present: {present_stock}, Minimum: {min_property}").grid(
+                        row=row, columnspan=2, padx=10, pady=5)
+                    row += 1
+            except ValueError:
+                # Handle the case where present_stock or min_property are not numeric
+                tk.Label(self.root,
+                         text=f"Error: Invalid stock data for {title}. Present: {present_stock}, Minimum: {min_property}").grid(
+                    row=row, columnspan=2, padx=10, pady=5)
+                row += 1
+
+        # Add buttons for navigation
+        go_to_modify_button = tk.Button(self.root, text="Go to Modify Books", command=self.open_book_operations)
+        go_to_modify_button.grid(row=row, column=0, padx=10, pady=10)
+
+        back_button = tk.Button(self.root, text="Back", command=self.open_manager_page)
+        back_button.grid(row=row, column=1, padx=10, pady=10)
+
     def open_reports(self):
         reports_manager = ManagerReports(self.root)  # Create an instance of the Reports class
         # Call the manager_report method on the instance to open the reports window
@@ -2473,11 +2511,28 @@ class BookstoreApp:
 
         # Display message box content in a dialog box
         if message_box_content:
-            messagebox.showinfo("Message Box", message_box_content[0])
+            tk.Label(self.root, text=message_box_content[0]).pack()
         else:
-            messagebox.showinfo("Message Box", "No messages in the message box.")
+            tk.Label(self.root, text="No messages in the message box.").pack()
 
-        self.create_main_page()
+        # Add a button to delete all messages
+        delete_button = tk.Button(self.root, text="Delete All Messages", command=self.delete_all_inbox_messages_of_user)
+        delete_button.pack(pady=10)
+
+        # Add a button to go back to the main page
+        back_button = tk.Button(self.root, text="Back", command=self.create_main_page)
+        back_button.pack(pady=10)
+
+    def delete_all_inbox_messages_of_user(self):
+        # Delete all messages from the user's inbox in the database
+        self.cursor.execute("UPDATE users SET inbox = '' WHERE username = %s", (self.logged_in_username,))
+        self.mydb.commit()
+
+        # Show confirmation message
+        messagebox.showinfo("Message Box", "All messages have been deleted.")
+
+        # Refresh the message box view
+        self.show_message_box()
 
     def view_user_info(self):
         # Retrieve user information from the database
