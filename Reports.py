@@ -3,11 +3,14 @@ from tkinter import ttk, messagebox
 import mysql.connector
 from DataBase_Connection import get_database_connection
 from datetime import datetime
+import matplotlib.pyplot as plt
+import pandas as pd
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 # import decimal
 
 
 class ManagerReports:
-    def __init__(self, parent):
+    def __init__(self,  parent):
         self.parent = parent
         # # Get the database connection
         # self.mydb, self.cursor = get_database_connection()
@@ -55,8 +58,104 @@ class ManagerReports:
             self.generate_report_8()
 
     def generate_custom_report(self):
-        # Implement functionality to generate custom reports
-        pass
+        mydb, cursor = get_database_connection()
+
+        # Fetch data from the database
+        cursor.execute("SELECT category FROM purchases")
+        category_data = cursor.fetchall()
+
+        cursor.execute("SELECT credit_card_type FROM purchases")
+        credit_card_data = cursor.fetchall()
+
+        cursor.execute("SELECT DISTINCT user_id FROM purchases")
+        user_ids = cursor.fetchall()
+
+        cursor.execute(
+            "SELECT MONTH(purchase_date) AS month, COUNT(*) AS purchases FROM purchases GROUP BY MONTH(purchase_date)")
+        monthly_purchases = cursor.fetchall()
+
+        # Prepare data for plotting
+        categories = [row[0] for row in category_data]
+        credit_cards = [row[0] for row in credit_card_data]
+        user_ids = [row[0] for row in user_ids]
+        months = [row[0] for row in monthly_purchases]
+        purchases = [row[1] for row in monthly_purchases]
+
+        # Create a new window for reports
+        reports_window = tk.Toplevel(self.parent)
+        reports_window.title("Custom Reports")
+
+        # Start window in full screen mode
+        reports_window.attributes('-fullscreen', True)
+
+        # Create a canvas with scrollbars
+        canvas = tk.Canvas(reports_window)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar = ttk.Scrollbar(reports_window, orient=tk.VERTICAL, command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Create a frame inside the canvas
+        reports_frame = tk.Frame(canvas)
+        canvas.create_window((reports_window.winfo_width() / 2, 0), window=reports_frame, anchor="n")
+
+        # Plot 1: Category of Books
+        fig1 = plt.figure(figsize=(15, 8))
+        pd.Series(categories).value_counts().plot(kind='bar', color='skyblue')
+        plt.title('Category of Books in Purchases')
+        plt.xlabel('Category')
+        plt.ylabel('Frequency')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        canvas1 = FigureCanvasTkAgg(fig1, master=reports_frame)
+        canvas1.draw()
+        canvas1.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Plot 2: Type of Credit Cards
+        fig2 = plt.figure(figsize=(8, 6))
+        pd.Series(credit_cards).value_counts().plot(kind='pie', autopct='%1.1f%%')
+        plt.title('Type of Credit Cards in Purchases')
+        plt.ylabel('')
+        plt.tight_layout()
+        canvas2 = FigureCanvasTkAgg(fig2, master=reports_frame)
+        canvas2.draw()
+        canvas2.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Plot 3: User IDs with Purchases
+        fig3 = plt.figure(figsize=(8, 6))
+        plt.plot(user_ids, marker='o', linestyle='-', color='orange')
+        plt.title('User IDs with Purchases')
+        plt.xlabel('Index')
+        plt.ylabel('User ID')
+        plt.tight_layout()
+        canvas3 = FigureCanvasTkAgg(fig3, master=reports_frame)
+        canvas3.draw()
+        canvas3.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Plot 4: Monthly Purchases
+        fig4 = plt.figure(figsize=(8, 6))
+        plt.bar(months, purchases, color='green')
+        plt.title('Monthly Purchases')
+        plt.xlabel('Month')
+        plt.ylabel('Number of Purchases')
+        plt.xticks(months)
+        plt.tight_layout()
+        canvas4 = FigureCanvasTkAgg(fig4, master=reports_frame)
+        canvas4.draw()
+        canvas4.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Add a button to close the window
+        close_button = tk.Button(reports_frame, text="Close", command=reports_window.destroy)
+        close_button.pack(side=tk.BOTTOM)
+
+        # Set the canvas as scrollable region
+        canvas.config(scrollregion=canvas.bbox("all"))
+
+        # Run the Tkinter event loop for the reports_window
+        reports_window.mainloop()
 
     def generate_report_1(self):
         try:
