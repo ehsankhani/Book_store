@@ -8,6 +8,7 @@ import datetime
 # from decimal import Decimal
 import re
 from Reports import ManagerReports  # Import the Reports class from reports.py
+from Reports import AdminReports
 from recommendation_system import RecommendationSystem
 # import traceback
 from Retirement import Retirement
@@ -272,14 +273,25 @@ class BookstoreApp:
         inbox_button = tk.Button(self.root, text="Inbox", command=self.open_admin_inbox)
         inbox_button.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
 
+        # Create a button for accessing the inbox
+        admin_reports = tk.Button(self.root, text="Reports", command=self.open_admin_reports)
+        admin_reports.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
+
         retirement_button = tk.Button(self.root, text="Retirement", command=self.open_admin_retirement_page)
-        retirement_button.grid(row=5, column=0, padx=10, pady=5)
+        retirement_button.grid(row=5, column=0, columnspan=2, padx=10, pady=5)
 
         # Create a back button
         back_button = tk.Button(self.root, text="Back", command=self.go_back)
-        back_button.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
+        back_button.grid(row=6, column=0, columnspan=2, padx=10, pady=5)
+
+    def open_admin_reports(self):
+        reports_admin = AdminReports(self.root)  # Create an instance of the Reports class
+        # Call the manager_report method on the instance to open the reports window
+        reports_admin.create_report_window()
+
     def open_admin_retirement_page(self):
         self.retirement.show_retire_admin_page(self.root)
+
     def open_place_orders_window(self):
         # Create a new window for placing orders
         place_orders_window = tk.Toplevel(self.root)
@@ -1137,7 +1149,7 @@ class BookstoreApp:
         edit_info_button = tk.Button(self.root, text="Edit Info", command=self.open_edit_manager_info)
         edit_info_button.grid(row=3, column=0, padx=10, pady=5)
 
-        reports_button = tk.Button(self.root, text="Reports", command=self.open_reports)
+        reports_button = tk.Button(self.root, text="Reports", command=self.open_manager_reports)
         reports_button.grid(row=4, column=0, padx=10, pady=5)
 
         retirement_button = tk.Button(self.root, text="Retirement", command=self.open_retirement_page)
@@ -1187,7 +1199,7 @@ class BookstoreApp:
         back_button = tk.Button(self.root, text="Back", command=self.open_manager_page)
         back_button.grid(row=row, column=1, padx=10, pady=10)
 
-    def open_reports(self):
+    def open_manager_reports(self):
         reports_manager = ManagerReports(self.root)  # Create an instance of the Reports class
         # Call the manager_report method on the instance to open the reports window
         reports_manager.create_report_window()

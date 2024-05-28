@@ -626,6 +626,179 @@ class ManagerReports:
             messagebox.showerror("Database Error", f"Failed to connect to the database: {err}")
 
 
+class AdminReports:
+    def __init__(self, parent):
+        self.parent = parent
+
+    def create_report_window(self):
+        # Create a new window for reports
+        self.reports_window = tk.Toplevel(self.parent)
+        self.reports_window.title("Admin Reports")
+
+        # Add GUI elements for reports
+        tk.Label(self.reports_window, text="Reports", font=("Helvetica", 16)).pack(pady=10)
+
+        # Dropdown menu for selecting report type
+        report_types = ["Admin Report 1", "Admin Report 2", "Admin Report 3", "Admin Report 4"]
+        self.selected_report = tk.StringVar(self.reports_window)
+        self.selected_report.set(report_types[0])  # Default selection
+        report_dropdown = ttk.Combobox(self.reports_window, textvariable=self.selected_report, values=report_types,
+                                       state="readonly")
+        report_dropdown.pack(pady=5)
+
+        # Button to generate selected report
+        generate_button = tk.Button(self.reports_window, text="Generate Report", command=self.generate_report)
+        generate_button.pack(pady=5)
+
+        # Button to have the description
+        generate_button = tk.Button(self.reports_window, text="Report description", command=self.report_description)
+        generate_button.pack(pady=5)
+
+        # Button for generating custom reports
+        custom_report_button = tk.Button(self.reports_window, text="Custom Report", command=self.generate_custom_report)
+        custom_report_button.pack(pady=5)
+
+    def report_description(self):
+        # Create a new window for report descriptions
+        description_window = tk.Toplevel(self.parent)
+        description_window.title("Report Descriptions")
+
+        # Add labels for report descriptions
+        reports = [
+            "Admin Report 1: Monthly Sales Summary",
+            "Admin Report 2: User Activity Overview",
+            "Admin Report 3: Inventory Status",
+            "Admin Report 4: Financial Summary"
+        ]
+
+        for i, report in enumerate(reports, 1):
+            tk.Label(description_window, text=report, font=("Helvetica", 16)).pack(anchor=tk.W)
+
+        # Add a button to close the window
+        close_button = tk.Button(description_window, text="Close", command=description_window.destroy)
+        close_button.pack(anchor=tk.CENTER)
+
+    def generate_report(self):
+        report_type = self.selected_report.get()
+        if report_type == "Admin Report 1":
+            self.generate_admin_report_1()
+        elif report_type == "Admin Report 2":
+            self.generate_admin_report_2()
+        elif report_type == "Admin Report 3":
+            self.generate_admin_report_3()
+        elif report_type == "Admin Report 4":
+            self.generate_admin_report_4()
+
+    def generate_custom_report(self):
+        mydb, cursor = get_database_connection()
+
+        # Fetch data from the database
+        cursor.execute("SELECT category FROM purchases")
+        category_data = cursor.fetchall()
+
+        cursor.execute("SELECT credit_card_type FROM purchases")
+        credit_card_data = cursor.fetchall()
+
+        cursor.execute("SELECT DISTINCT user_id FROM purchases")
+        user_ids = cursor.fetchall()
+
+        cursor.execute(
+            "SELECT MONTH(purchase_date) AS month, COUNT(*) AS purchases FROM purchases GROUP BY MONTH(purchase_date)")
+        monthly_purchases = cursor.fetchall()
+
+        # Prepare data for plotting
+        categories = [row[0] for row in category_data]
+        credit_cards = [row[0] for row in credit_card_data]
+        user_ids = [row[0] for row in user_ids]
+        months = [row[0] for row in monthly_purchases]
+        purchases = [row[1] for row in monthly_purchases]
+
+        # Create a new window for reports
+        reports_window = tk.Toplevel(self.parent)
+        reports_window.title("Custom Reports")
+
+        # Start window in full screen mode
+        reports_window.attributes('-fullscreen', True)
+
+        # Create a canvas with scrollbars
+        canvas = tk.Canvas(reports_window)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar = ttk.Scrollbar(reports_window, orient=tk.VERTICAL, command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.bind('<Configure>', lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+
+        # Create a frame inside the canvas
+        reports_frame = tk.Frame(canvas)
+        canvas.create_window((reports_window.winfo_width() / 2, 0), window=reports_frame, anchor="n")
+
+        # Plot 1: Category of Books
+        fig1 = plt.figure(figsize=(15, 8))
+        pd.Series(categories).value_counts().plot(kind='bar', color='skyblue')
+        plt.title('Category of Books in Purchases')
+        plt.xlabel('Category')
+        plt.ylabel('Frequency')
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        canvas1 = FigureCanvasTkAgg(fig1, master=reports_frame)
+        canvas1.draw()
+        canvas1.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Plot 2: Type of Credit Cards
+        fig2 = plt.figure(figsize=(8, 6))
+        pd.Series(credit_cards).value_counts().plot(kind='pie', autopct='%1.1f%%')
+        plt.title('Type of Credit Cards in Purchases')
+        plt.ylabel('')
+        plt.tight_layout()
+        canvas2 = FigureCanvasTkAgg(fig2, master=reports_frame)
+        canvas2.draw()
+        canvas2.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Plot 3: User IDs with Purchases
+        fig3 = plt.figure(figsize=(8, 6))
+        plt.plot(user_ids, marker='o', linestyle='-', color='orange')
+        plt.title('User IDs with Purchases')
+        plt.xlabel('Index')
+        plt.ylabel('User ID')
+        plt.tight_layout()
+        canvas3 = FigureCanvasTkAgg(fig3, master=reports_frame)
+        canvas3.draw()
+        canvas3.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Plot 4: Monthly Purchases
+        fig4 = plt.figure(figsize=(8, 6))
+        plt.bar(months, purchases, color='green')
+        plt.title('Monthly Purchases')
+        plt.xlabel('Month')
+        plt.ylabel('Number of Purchases')
+        plt.xticks(months)
+        plt.tight_layout()
+        canvas4 = FigureCanvasTkAgg(fig4, master=reports_frame)
+        canvas4.draw()
+        canvas4.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Add a button to close the window
+        close_button = tk.Button(reports_frame, text="Close", command=reports_window.destroy)
+        close_button.pack(side=tk.BOTTOM)
+
+        # Set the canvas as scrollable region
+        canvas.config(scrollregion=canvas.bbox("all"))
+
+    def generate_admin_report_1(self):
+        pass
+
+    def generate_admin_report_2(self):
+        pass
+
+    def generate_admin_report_3(self):
+        pass
+
+    def generate_admin_report_4(self):
+        pass
+
+
 
 # # Example usage:
 # root = tk.Tk()
