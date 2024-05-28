@@ -639,7 +639,8 @@ class AdminReports:
         tk.Label(self.reports_window, text="Reports", font=("Helvetica", 16)).pack(pady=10)
 
         # Dropdown menu for selecting report type
-        report_types = ["Admin Report 1", "Admin Report 2", "Admin Report 3", "Admin Report 4"]
+        report_types = ["Admin Report 1", "Admin Report 2", "Admin Report 3", "Admin Report 4", "Admin Report 5",
+                        "Admin Report 6", "Admin Report 7", "Admin Report 8"]
         self.selected_report = tk.StringVar(self.reports_window)
         self.selected_report.set(report_types[0])  # Default selection
         report_dropdown = ttk.Combobox(self.reports_window, textvariable=self.selected_report, values=report_types,
@@ -668,11 +669,11 @@ class AdminReports:
             "Report 1: Sum of each category in each month",
             "Report 2: Sum of each category in store",
             "Report 3: top 10 most purchased books",
-            "Report 4: most expensive books in each category"
-            "Report 5: List of the buyers who purchased from each category in each month"
-            "Report 6: avg sell price for each user in each month"
-            "Report 7: avg number of the books published"
-            "Report 8: avg number of the customers in daily"
+            "Report 4: most expensive books in each category",
+            "Report 5: List of the buyers who purchased from each category in each month",
+            "Report 6: avg sell price for each user in each month",
+            "Report 7: avg number of the books published",
+            "Report 8: avg number of the customers in daily",
 
         ]
 

@@ -16,6 +16,7 @@ import os
 from PIL import Image, ImageTk
 import shutil
 
+
 class BookstoreApp:
     def __init__(self, root):
         self.root = root
