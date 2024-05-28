@@ -21,6 +21,7 @@ class BookstoreApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Bookstore")
+        self.root.attributes('-fullscreen', True)
         self.is_logged_in = False
         self.logged_in_username = None
         self.logged_in_lastName = None
@@ -41,43 +42,80 @@ class BookstoreApp:
         # Clear the window and create main page elements
         self.clear_window()
 
-        # GUI elements for main page
-        tk.Label(self.root, text="Search:").grid(row=0, column=0)
+        # Define custom styles
+        title_font = ("Helvetica", 16, "bold")
+        section_font = ("Helvetica", 14, "bold")
+        button_font = ("Helvetica", 12)
+
+        # Main frame
+        main_frame = tk.Frame(self.root, bg="#ffffff")
+        main_frame.place(relx=0.5, rely=0.5, anchor="center")  # Center main frame within the window
+
+        # Search Frame
+        search_frame = tk.LabelFrame(main_frame, text="Search Books", font=section_font, bg="#f9f9f9", fg="#333333",
+                                     bd=2, relief="groove")
+        search_frame.grid(row=0, column=0, padx=20, pady=10, sticky="ew")
 
         # Entry for search text
-        self.search_entry = tk.Entry(self.root)
-        self.search_entry.grid(row=0, column=1)
+        self.search_entry = tk.Entry(search_frame, font=button_font, bd=2, relief="sunken")
+        self.search_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
         # Combobox for search type
-        self.search_type = ttk.Combobox(self.root, values=["Title", "Author", "Publisher"])
-        self.search_type.grid(row=0, column=3)
+        self.search_type = ttk.Combobox(search_frame, values=["Title", "Author", "Publisher"], font=button_font)
+        self.search_type.grid(row=0, column=1, padx=10, pady=10, sticky="ew")
         self.search_type.current(0)  # Set default value
 
-        tk.Button(self.root, text="Search in :", command=self.search_books, width=20).grid(row=0, column=2)
+        tk.Button(search_frame, text="Search", command=self.search_books, width=15, font=button_font, bg="#4CAF50",
+                  fg="white").grid(row=0, column=2, padx=10, pady=10, sticky="ew")
 
+        self.search_results_listbox = tk.Listbox(search_frame, height=10, width=80, font=button_font, bd=2,
+                                                 relief="sunken")
+        self.search_results_listbox.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky="ew")
 
-        self.search_results_listbox = tk.Listbox(self.root, height=10, width=100)
-        self.search_results_listbox.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
+        # Book Info Button
+        tk.Button(search_frame, text="Book Info", command=self.show_book_info, font=button_font, bg="#4CAF50",
+                  fg="white").grid(row=2, column=2, padx=10, pady=10, sticky="ew")
 
-        # Button for showing book info
-        tk.Button(self.root, text="Book Info", command=self.show_book_info).grid(row=2, column=3)
+        # User Actions Frame
+        user_actions_frame = tk.LabelFrame(main_frame, text="User Actions", font=section_font, bg="#f9f9f9",
+                                           fg="#333333", bd=2, relief="groove")
+        user_actions_frame.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
 
-        # Buttons for sign-in and sign-up
-        tk.Button(self.root, text="Sign In", command=self.show_sign_in_page).grid(row=2, column=0)
-        tk.Button(self.root, text="Sign Up", command=self.show_sign_up_page).grid(row=2, column=1)
+        tk.Button(user_actions_frame, text="Sign In", command=self.show_sign_in_page, font=button_font, bg="#2196F3",
+                  fg="white").grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        tk.Button(user_actions_frame, text="Sign Up", command=self.show_sign_up_page, font=button_font, bg="#2196F3",
+                  fg="white").grid(row=0, column=1, padx=10, pady=10, sticky="ew")
 
-        # Buttons for admin and manager login
-        tk.Button(self.root, text="Admin Login", command=self.show_admin_login_page).grid(row=3, column=2, sticky="w")
-        tk.Button(self.root, text="Manager Login", command=self.show_manager_login_page).grid(row=2, column=2,
-                                                                                              sticky="e")
+        # Admin & Manager Actions Frame
+        admin_manager_frame = tk.LabelFrame(main_frame, text="Admin & Manager Actions", font=section_font,
+                                            bg="#f9f9f9",
+                                            fg="#333333", bd=2, relief="groove")
+        admin_manager_frame.grid(row=2, column=0, padx=20, pady=10, sticky="ew")
 
-        # New buttons for cart
-        tk.Button(self.root, text="Add to Cart", command=self.add_to_cart).grid(row=4, column=0)
-        tk.Button(self.root, text="View Cart", command=self.view_cart).grid(row=4, column=1)
-        tk.Button(self.root, text="Proceed to Checkout", command=self.not_logged_in_warning).grid(row=4, column=2)
+        tk.Button(admin_manager_frame, text="Admin Login", command=self.show_admin_login_page, font=button_font,
+                  bg="#FF9800", fg="white").grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        tk.Button(admin_manager_frame, text="Manager Login", command=self.show_manager_login_page, font=button_font,
+                  bg="#FF9800", fg="white").grid(row=0, column=1, padx=10, pady=10, sticky="ew")
 
-        self.login_status_label = tk.Label(self.root, text="", fg="red")
-        self.login_status_label.grid(row=4, columnspan=3)
+        # Cart Actions Frame
+        cart_actions_frame = tk.LabelFrame(main_frame, text="Cart Actions", font=section_font, bg="#f9f9f9",
+                                           fg="#333333", bd=2, relief="groove")
+        cart_actions_frame.grid(row=3, column=0, padx=20, pady=10, sticky="ew")
+
+        tk.Button(cart_actions_frame, text="Add to Cart", command=self.add_to_cart, font=button_font, bg="#9C27B0",
+                  fg="white").grid(row=0, column=0, padx=10, pady=10, sticky="ew")
+        tk.Button(cart_actions_frame, text="View Cart", command=self.view_cart, font=button_font, bg="#9C27B0",
+                  fg="white").grid(row=0, column=1, padx=10, pady=10, sticky="ew")
+        tk.Button(cart_actions_frame, text="Proceed to Checkout", command=self.not_logged_in_warning, font=button_font,
+                  bg="#9C27B0", fg="white").grid(row=0, column=2, padx=10, pady=10, sticky="ew")
+
+        # Exit Button
+        tk.Button(main_frame, text="Exit", command=self.root.quit, font=button_font, bg="#FF5733",
+                  fg="white").grid(row=4, column=0, padx=10, pady=10, sticky="ew")
+
+        # Login Status Label
+        self.login_status_label = tk.Label(user_actions_frame, text="", fg="red", font=button_font, bg="#ffffff")
+        self.login_status_label.grid(row=0, column=2, padx=10, pady=10, sticky="ew", columnspan=3)
 
         self.update_login_status()
 
@@ -88,36 +126,57 @@ class BookstoreApp:
         # Display the warning message
         tk.Label(self.root, text="Warning", font=("Helvetica", 14), fg="red").grid(row=0, column=0, columnspan=2,
                                                                                    pady=10)
-        tk.Label(self.root, text="Please login first", font=("Helvetica", 16),fg="red").grid(row=1, column=0, columnspan=2, pady=5)
+        tk.Label(self.root, text="Please login first", font=("Helvetica", 16), fg="red").grid(row=1, column=0, columnspan=2, pady=5)
 
         # Create buttons to redirect the user
         tk.Button(self.root, text="Go to Sign Up Page", command=self.show_sign_up_page).grid(row=2, column=0, padx=10,
                                                                                              pady=5)
         tk.Button(self.root, text="Go to Main Page", command=self.create_main_page).grid(row=2, column=1, padx=10,
                                                                                          pady=5)
+
     def show_sign_in_page(self):
         # Clear the window and create sign-in page elements
         self.clear_window()
-        self.sign_in_label = tk.Label(self.root, text="Sign In Page")
-        self.sign_in_label.grid(row=0, column=0)
 
-        # Create sign-in input fields
-        self.username_label = tk.Label(self.root, text="Username:")
-        self.username_label.grid(row=1, column=0)
-        self.username_entry = tk.Entry(self.root)
-        self.username_entry.grid(row=1, column=1)
+        # Define custom styles
+        title_font = ("Helvetica", 16, "bold")
+        label_font = ("Helvetica", 14)
+        entry_font = ("Helvetica", 12)
+        button_font = ("Helvetica", 12, "bold")
 
-        self.password_label = tk.Label(self.root, text="Password:")
-        self.password_label.grid(row=2, column=0)
-        self.password_entry = tk.Entry(self.root, show="*")
-        self.password_entry.grid(row=2, column=1)
+        # Main frame to center the content
+        sign_in_frame = tk.Frame(self.root, bg="#f0f0f0")
+        sign_in_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Button to submit sign-in information
-        self.sign_in_button = tk.Button(self.root, text="Sign In", command=self.validate_and_sign_in)
-        self.sign_in_button.grid(row=3, columnspan=2)
+        # Title Label
+        self.sign_in_label = tk.Label(sign_in_frame, text="Sign In", font=title_font, bg="#f0f0f0", fg="#333333")
+        self.sign_in_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
-        # Create back button
-        self.create_back_button()
+        # Username Label and Entry
+        self.username_label = tk.Label(sign_in_frame, text="Username:", font=label_font, bg="#f0f0f0", fg="#333333")
+        self.username_label.grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        self.username_entry = tk.Entry(sign_in_frame, font=entry_font, bd=2, relief="sunken")
+        self.username_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+
+        # Password Label and Entry
+        self.password_label = tk.Label(sign_in_frame, text="Password:", font=label_font, bg="#f0f0f0", fg="#333333")
+        self.password_label.grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        self.password_entry = tk.Entry(sign_in_frame, font=entry_font, bd=2, relief="sunken", show="*")
+        self.password_entry.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
+
+        # Sign In Button
+        self.sign_in_button = tk.Button(sign_in_frame, text="Sign In", font=button_font, bg="#4CAF50", fg="white",
+                                        command=self.validate_and_sign_in, width=20)
+        self.sign_in_button.grid(row=3, column=0, columnspan=2, pady=20, padx=10, sticky="ew")
+
+        # Back Button
+        self.back_button = tk.Button(sign_in_frame, text="Back", font=button_font, bg="#FF5733", fg="white",
+                                     command=self.create_main_page, width=20)
+        self.back_button.grid(row=4, column=0, columnspan=2, pady=(10, 0), padx=10, sticky="ew")
+
+        # Configure column weights to ensure proper stretching
+        sign_in_frame.columnconfigure(0, weight=1)
+        sign_in_frame.columnconfigure(1, weight=1)
 
     def show_admin_login_page(self):
         # Clear the window and create admin login page elements
@@ -216,7 +275,8 @@ class BookstoreApp:
         # Check if the user exists and credentials are correct
         # Perform authentication for admin here, using a separate table for admins
         # Replace 'admin_table' with the actual table name for admins
-        self.cursor.execute("SELECT admin_id FROM admin WHERE username = %s AND password = %s AND date_out IS NULL", (username, password))
+        self.cursor.execute("SELECT admin_id FROM admin WHERE username = %s AND password = %s AND date_out IS NULL",
+                            (username, password))
         admin_id = self.cursor.fetchone()
         if admin_id:
             # Sign-in successful
@@ -753,7 +813,7 @@ class BookstoreApp:
         books = self.cursor.fetchall()
 
         # Create a listbox to display the book titles
-        book_listbox = tk.Listbox(self.root)
+        book_listbox = tk.Listbox(self.root, height=10, width=60)
         book_listbox.pack(padx=10, pady=10)
 
         # Insert each book title into the listbox
