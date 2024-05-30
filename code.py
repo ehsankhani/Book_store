@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
-from tkinter import messagebox, scrolledtext, simpledialog, filedialog
+from tkinter import messagebox, scrolledtext, simpledialog, filedialog, Toplevel
 from DataBase_Connection import get_database_connection
 import mysql.connector
 import datetime
@@ -10,6 +10,7 @@ import re
 from Reports import ManagerReports  # Import the Reports class from reports.py
 from Reports import AdminReports
 from recommendation_system import RecommendationSystem
+from PlaceHolder import PlaceholderEntry
 # import traceback
 from Retirement import Retirement
 import os
@@ -31,6 +32,7 @@ class BookstoreApp:
         self.cart = {}
         self.recommendation_system = RecommendationSystem()
         self.retirement = Retirement(self)
+        self.placeholder = PlaceholderEntry()
 
         # Get the database connection
         self.mydb, self.cursor = get_database_connection()
@@ -56,8 +58,9 @@ class BookstoreApp:
                                      bd=2, relief="groove")
         search_frame.grid(row=0, column=0, padx=20, pady=10, sticky="ew")
 
-        # Entry for search text
-        self.search_entry = tk.Entry(search_frame, font=button_font, bd=2, relief="sunken")
+        # Entry for search text with placeholder
+        self.search_entry = PlaceholderEntry(search_frame, placeholder="Search the books here...", font=button_font, bd=2,
+                                             relief="sunken")
         self.search_entry.grid(row=0, column=0, padx=10, pady=10, sticky="ew")
 
         # Combobox for search type
@@ -2387,73 +2390,92 @@ class BookstoreApp:
 
     def update_login_status(self):
         # Clear any existing welcome and logout buttons
-        if hasattr(self, 'welcome_label'):
-            self.welcome_label.destroy()
-        if hasattr(self, 'logout_button'):
-            self.logout_button.destroy()
-        if hasattr(self, 'msg_box_button'):
-            self.msg_box_button.destroy()
-        # if hasattr(self, 'search_results_listbox'):
-        #     self.search_results_listbox.destroy()
-        if hasattr(self, 'add_to_cart_button'):
-            self.add_to_cart_button.destroy()
-        if hasattr(self, 'cart_button'):
-            self.cart_button.destroy()
-        if hasattr(self, 'checkout_button'):
-            self.checkout_button.destroy()
+        for widget_name in ['welcome_label', 'logout_button', 'msg_box_button', 'view_info_button',
+                            'edit_info_button',
+                            'add_to_cart_button', 'cart_button', 'checkout_button']:
+            if hasattr(self, widget_name):
+                getattr(self, widget_name).destroy()
+
+        # Define custom styles
+        title_font = ("Helvetica", 16, "bold")
+        label_font = ("Helvetica", 14)
+        entry_font = ("Helvetica", 12)
+        button_font = ("Helvetica", 12, "bold")
 
         # Update welcome message and display logout button if logged in
         if self.is_logged_in:
+            # Clear the window
             self.clear_window()
-            self.welcome_label = tk.Label(self.root, text=f"Welcome, {self.logged_in_username}", fg="green")
-            self.welcome_label.grid(row=3, columnspan=2)
 
-            self.logout_button = tk.Button(self.root, text="Logout", command=self.logout)
-            self.logout_button.grid(row=3, column=2)
+            # Main frame to center the content
+            main_frame = tk.Frame(self.root, bg="#f0f0f0")
+            main_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-            # Show view and edit info buttons
-            self.view_info_button = tk.Button(self.root, text="View Info", command=self.view_user_info)
-            self.view_info_button.grid(row=4, column=1)
-            self.edit_info_button = tk.Button(self.root, text="Edit Info", command=self.edit_selected_parameter_page)
-            self.edit_info_button.grid(row=4, column=2)
+            # Welcome Label
+            self.welcome_label = tk.Label(main_frame, text=f"Welcome, {self.logged_in_username}", font=label_font,
+                                          bg="#f0f0f0", fg="green")
+            self.welcome_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
-            # Show Message Box button
-            self.msg_box_button = tk.Button(self.root, text="Message Box", command=self.show_message_box)
-            self.msg_box_button.grid(row=4, column=0)
+            # Logout Button
+            self.logout_button = tk.Button(main_frame, text="Logout", font=button_font, bg="#FF5733", fg="white",
+                                           command=self.logout)
+            self.logout_button.grid(row=0, column=2, padx=(10, 0))
 
-            # GUI elements for main page
-            tk.Label(self.root, text="Search:").grid(row=0, column=0)
+            # View and Edit Info Buttons
+            self.view_info_button = tk.Button(main_frame, text="View Info", font=button_font, bg="#2196F3", fg="white",
+                                              command=self.view_user_info)
+            self.view_info_button.grid(row=1, column=0, padx=(0, 10), pady=10, sticky="ew")
+            self.edit_info_button = tk.Button(main_frame, text="Edit Info", font=button_font, bg="#2196F3", fg="white",
+                                              command=self.edit_selected_parameter_page)
+            self.edit_info_button.grid(row=1, column=1, padx=(10, 0), pady=10, sticky="ew")
+
+            # Message Box Button
+            self.msg_box_button = tk.Button(main_frame, text="Message Box", font=button_font, bg="#4CAF50", fg="white",
+                                            command=self.show_message_box)
+            self.msg_box_button.grid(row=1, column=2, pady=10, sticky="ew")
+
+            # Search Label
+            tk.Label(main_frame, text="Search:", font=label_font, bg="#f0f0f0").grid(row=2, column=0, pady=10,
+                                                                                     sticky="e")
 
             # Entry for search text
-            self.search_entry = tk.Entry(self.root)
-            self.search_entry.grid(row=0, column=1)
+            self.search_entry = tk.Entry(main_frame, font=entry_font, bd=2, relief="sunken")
+            self.search_entry.grid(row=2, column=1, pady=10, sticky="ew")
 
             # Combobox for search type
-            self.search_type = ttk.Combobox(self.root, values=["Title", "Author", "Publisher"])
-            self.search_type.grid(row=0, column=3)
+            self.search_type = ttk.Combobox(main_frame, values=["Title", "Author", "Publisher"], font=entry_font)
+            self.search_type.grid(row=2, column=2, pady=10, sticky="ew")
             self.search_type.current(0)  # Set default value
 
-            tk.Button(self.root, text="Search in :", command=self.search_books, width=20).grid(row=0, column=2)
+            # Search Button
+            tk.Button(main_frame, text="Search", font=button_font, bg="#4CAF50", fg="white",
+                      command=self.search_books).grid(row=2, column=3, padx=(10, 0), pady=10, sticky="ew")
 
-            self.search_results_listbox = tk.Listbox(self.root, height=10, width=100)
-            self.search_results_listbox.grid(row=1, column=0, columnspan=4, padx=10, pady=10)
+            # Search Results Listbox
+            self.search_results_listbox = tk.Listbox(main_frame, height=10, width=100, font=entry_font, bd=2,
+                                                     relief="sunken")
+            self.search_results_listbox.grid(row=3, column=0, columnspan=4, padx=10, pady=10, sticky="ew")
 
-            # Add button to add books to cart
-            self.add_to_cart_button = tk.Button(self.root, text="Add to Cart", command=self.add_to_cart)
-            self.add_to_cart_button.grid(row=2, column=1)
+            # Add to Cart Button
+            self.add_to_cart_button = tk.Button(main_frame, text="Add to Cart", font=button_font, bg="#9C27B0",
+                                                fg="white", command=self.add_to_cart)
+            self.add_to_cart_button.grid(row=4, column=0, pady=10, sticky="ew")
 
-            # Add button to view cart
-            self.cart_button = tk.Button(self.root, text="See the Cart", command=self.view_cart)
-            self.cart_button.grid(row=2, column=2)
+            # View Cart Button
+            self.cart_button = tk.Button(main_frame, text="See the Cart", font=button_font, bg="#9C27B0", fg="white",
+                                         command=self.view_cart)
+            self.cart_button.grid(row=4, column=1, pady=10, sticky="ew")
 
-            # Add button to proceed to checkout
-            self.checkout_button = tk.Button(self.root, text="Proceed to Checkout", command=self.proceed_to_checkout)
-            self.checkout_button.grid(row=2, column=3)
+            # Proceed to Checkout Button
+            self.checkout_button = tk.Button(main_frame, text="Proceed to Checkout", font=button_font, bg="#9C27B0",
+                                             fg="white", command=self.proceed_to_checkout)
+            self.checkout_button.grid(row=4, column=2, pady=10, sticky="ew")
 
-            # Button for showing book info
-            tk.Button(self.root, text="Book Info", command=self.show_book_info).grid(row=3, column=3)
+            # Book Info Button
+            tk.Button(main_frame, text="Book Info", font=button_font, bg="#4CAF50", fg="white",
+                      command=self.show_book_info).grid(row=4, column=3, padx=(10, 0), pady=10, sticky="ew")
 
-            # Get random books from the recommendation_system.py #adjust to see the count of books in the recommendation
+            # Get random books from the recommendation_system.py
             recommendations = self.recommendation_system.get_recommendations(self.logged_in_username, 3)
 
             # Display books in the listbox
@@ -2473,8 +2495,8 @@ class BookstoreApp:
                     print(f"Book with ID {book_id} not found in database.")
             self.inbox_alert()
         else:
-            self.welcome_label = tk.Label(self.root, text="not logged in", fg="red")
-            self.welcome_label.grid(row=3, columnspan=3)
+            self.welcome_label = tk.Label(self.root, text="Not logged in", font=label_font, fg="red", bg="#f0f0f0")
+            self.welcome_label.grid(row=0, column=0, columnspan=2, pady=10)
 
     def show_book_info(self):
         selected_index = self.search_results_listbox.curselection()
@@ -2608,22 +2630,70 @@ class BookstoreApp:
         self.show_message_box()
 
     def view_user_info(self):
-        # Retrieve user information from the database
-        self.cursor.execute("SELECT * FROM users WHERE username = %s", (self.logged_in_username,))
+        # Retrieve user information from the users table
+        self.cursor.execute(
+            "SELECT username, first_name, last_name, city, state, zip_code FROM users WHERE username = %s",
+            (self.logged_in_username,))
         user_info = self.cursor.fetchone()
 
-        # Display user information in a dialog box
         if user_info:
-            user_info_text = (f"Username: {user_info[1]}\n"
-                              f"First Name: {user_info[3]}\n"
-                              f"Last Name: {user_info[4]}\n"
-                              f"City: {user_info[5]}\n"
-                              f"State: {user_info[6]}\n"
-                              f"Zip Code: {user_info[7]}"
-                              f"card Number: {user_info[8]}"
-                              f"exp date: {user_info[9]}"
-                              f"card type: {user_info[10]}")
-            messagebox.showinfo("User Info", user_info_text)
+            # Extract user details
+            username, first_name, last_name, city, state, zip_code = user_info
+
+            # Retrieve card information from the credit_cards table
+            self.cursor.execute("SELECT card_number, exp_date, card_type FROM credit_cards WHERE user_id = %s",
+                                (self.logged_in_id,))
+            card_info = self.cursor.fetchone()
+
+            if card_info:
+                card_number, exp_date, card_type = card_info
+            else:
+                card_number, exp_date, card_type = "N/A", "N/A", "N/A"
+
+            # Create a new top-level window for displaying user information
+            info_window = Toplevel(self.root)
+            info_window.title("User Information")
+            info_window.geometry("470x550")
+            info_window.configure(bg="#2c3e50")
+
+            # Define fonts
+            title_font = ("Helvetica", 18, "bold")
+            label_font = ("Helvetica", 14)
+            value_font = ("Helvetica", 14, "italic")
+
+            # Title Label
+            title_label = tk.Label(info_window, text="User Information", font=title_font, bg="#2c3e50", fg="#ecf0f1")
+            title_label.pack(pady=20)
+
+            # User Info Frame
+            info_frame = tk.Frame(info_window, bg="#34495e", bd=2, relief="groove")
+            info_frame.pack(pady=10, padx=20, fill="both", expand=True)
+
+            # Function to create labeled info rows
+            def create_info_row(frame, label_text, value_text, row):
+                tk.Label(frame, text=label_text, font=label_font, bg="#34495e", fg="#ecf0f1").grid(row=row, column=0,
+                                                                                                   sticky="w", padx=10,
+                                                                                                   pady=5)
+                tk.Label(frame, text=value_text, font=value_font, bg="#34495e", fg="#bdc3c7").grid(row=row, column=1,
+                                                                                                   sticky="w", padx=10,
+                                                                                                   pady=5)
+
+            # Display user information
+            create_info_row(info_frame, "Username:", username, 0)
+            create_info_row(info_frame, "First Name:", first_name, 1)
+            create_info_row(info_frame, "Last Name:", last_name, 2)
+            create_info_row(info_frame, "City:", city, 3)
+            create_info_row(info_frame, "State:", state, 4)
+            create_info_row(info_frame, "Zip Code:", zip_code, 5)
+            create_info_row(info_frame, "Card Number:", card_number, 6)
+            create_info_row(info_frame, "Exp Date:", exp_date, 7)
+            create_info_row(info_frame, "Card Type:", card_type, 8)
+
+            # Close Button
+            close_button = tk.Button(info_window, text="Close", command=info_window.destroy, font=label_font,
+                                     bg="#e74c3c", fg="white")
+            close_button.pack(pady=20)
+
         else:
             messagebox.showerror("Error", "Failed to retrieve user information.")
 
