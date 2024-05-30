@@ -2604,23 +2604,48 @@ class BookstoreApp:
         self.cursor.execute("SELECT inbox FROM users WHERE username = %s", (self.logged_in_username,))
         message_box_content = self.cursor.fetchone()
 
-        # Display message box content in a dialog box
+        # Main frame for centering content
+        main_frame = tk.Frame(self.root, bg="#ffffff")
+        main_frame.pack(expand=True, fill="both")
+
+        # Title Label
+        title_label = tk.Label(main_frame, text="Message Box", font=("Helvetica", 20, "bold"), bg="#ffffff",
+                               fg="#2980b9")
+        title_label.pack(pady=20)
+
+        # Frame for displaying message box content
+        message_frame = tk.Frame(main_frame, bg="#ffffff")
+        message_frame.pack()
+
+        # Display message box content if available
         if message_box_content:
-            tk.Label(self.root, text=message_box_content[0]).pack()
+            messages = message_box_content[0].split(",") if message_box_content[0] else []  # Split messages by comma
+            for message in messages:
+                tk.Label(message_frame, text=message.strip(), font=("Helvetica", 12), bg="#ffffff").pack(anchor="w",
+                                                                                                         padx=20,
+                                                                                                         pady=5)
         else:
-            tk.Label(self.root, text="No messages in the message box.").pack()
+            tk.Label(message_frame, text="No messages in the message box.", font=("Helvetica", 12), bg="#ffffff").pack(
+                pady=10)
 
-        # Add a button to delete all messages
-        delete_button = tk.Button(self.root, text="Delete All Messages", command=self.delete_all_inbox_messages_of_user)
-        delete_button.pack(pady=10)
+        # Frame for buttons
+        button_frame = tk.Frame(main_frame, bg="#ffffff")
+        button_frame.pack(pady=20)
 
-        # Add a button to go back to the main page
-        back_button = tk.Button(self.root, text="Back", command=self.create_main_page)
-        back_button.pack(pady=10)
+        # Button to delete all messages
+        delete_button = tk.Button(button_frame, text="Delete All Messages",
+                                  command=self.delete_all_inbox_messages_of_user,
+                                  font=("Helvetica", 12, "bold"), bg="#e74c3c", fg="#ffffff")
+        delete_button.pack(side="left", padx=10)
+
+        # Button to go back to the main page
+        back_button = tk.Button(button_frame, text="Back", command=self.create_main_page,
+                                font=("Helvetica", 12, "bold"), bg="#2980b9", fg="#ffffff")
+        back_button.pack(side="right", padx=10)
 
     def delete_all_inbox_messages_of_user(self):
         # Delete all messages from the user's inbox in the database
-        self.cursor.execute("UPDATE users SET inbox = '' WHERE username = %s", (self.logged_in_username,))
+        self.cursor.execute("UPDATE users SET inbox = Null WHERE username = %s", (self.logged_in_username,))
         self.mydb.commit()
 
         # Show confirmation message
@@ -2704,50 +2729,117 @@ class BookstoreApp:
     #     # Create the edit page
     #     self.edit_selected_parameter_page()
 
-
     def edit_selected_parameter_page(self):
         self.clear_window()
+
+        # Define fonts and colors
+        title_font = ("Helvetica", 20, "bold")
+        label_font = ("Helvetica", 14)
+        button_font = ("Helvetica", 12, "bold")
+
+        bg_color = "#ffffff"  # White background
+        fg_color = "#2c3e50"  # Dark grey text
+        button_bg = "#1abc9c"  # Teal button background
+        button_fg = "#ffffff"  # White button text
+        frame_bg = "#ecf0f1"  # Light grey frame background
+        dropdown_bg = "#bdc3c7"  # Light grey dropdown background
+        dropdown_fg = "#2c3e50"  # Dark grey dropdown text
+        title_fg = "#2980b9"  # Blue title text
+
+        # Main frame to center the content
+        main_frame = tk.Frame(self.root, bg=bg_color, padx=20, pady=20)
+        main_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Title Label
+        title_label = tk.Label(main_frame, text="Edit User Information", font=title_font, bg=bg_color, fg=title_fg)
+        title_label.grid(row=0, column=0, columnspan=2, pady=20)
+
         # List of parameters
-        parameters = ["Password",
-                      "First Name",
-                      "Last Name",
-                      "City",
-                      "State",
-                      "Zip Code",
-                      "card number",
-                      "exp date",
-                      "card type"]
+        parameters = ["Password", "First Name", "Last Name", "City", "State", "Zip Code", "Card Number", "Exp Date",
+                      "Card Type"]
+
+        # Frame for parameter selection
+        selection_frame = tk.Frame(main_frame, bg=frame_bg, padx=10, pady=10, relief=tk.RIDGE, bd=2)
+        selection_frame.grid(row=1, column=0, columnspan=2, pady=10, sticky="ew")
 
         # Prompt user to select a parameter to edit
         selected_parameter = tk.StringVar(value=parameters[0])  # Default selection
-        parameter_label = tk.Label(self.root, text="Select parameter to edit:")
-        parameter_label.grid(row=0, column=0)
-        parameter_dropdown = tk.OptionMenu(self.root, selected_parameter, *parameters)
-        parameter_dropdown.grid(row=0, column=1)
+        parameter_label = tk.Label(selection_frame, text="Select parameter to edit:", font=label_font, bg=frame_bg,
+                                   fg=fg_color)
+        parameter_label.grid(row=0, column=0, pady=10, padx=10, sticky="w")
+
+        parameter_dropdown = tk.OptionMenu(selection_frame, selected_parameter, *parameters)
+        parameter_dropdown.config(font=label_font, bg=dropdown_bg, fg=dropdown_fg, activebackground=dropdown_bg,
+                                  activeforeground=dropdown_fg)
+        parameter_dropdown.grid(row=0, column=1, pady=10, padx=10, sticky="w")
+
+        # Frame for confirm button
+        button_frame = tk.Frame(main_frame, bg=bg_color)
+        button_frame.grid(row=2, column=0, columnspan=2, pady=20)
 
         # Button to confirm parameter selection
-        confirm_button = tk.Button(self.root, text="Confirm",
+        confirm_button = tk.Button(button_frame, text="Confirm", font=button_font, bg=button_bg, fg=button_fg,
                                    command=lambda: self.edit_selected_parameter(selected_parameter.get()))
-        confirm_button.grid(row=1, columnspan=2)
+        confirm_button.pack(side=tk.LEFT, padx=10)
 
         # Create back button
-        self.create_back_button()
+        back_button = tk.Button(button_frame, text="Back", command=self.create_main_page,
+                                font=button_font, bg="#e74c3c", fg=button_fg)
+        back_button.pack(side=tk.LEFT, padx=10)
+
+        # Center the widgets in the grid
+        main_frame.grid_columnconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=1)
+
     def edit_selected_parameter(self, parameter):
         # Clear the window
         self.clear_window()
 
+        # Define fonts and colors
+        title_font = ("Helvetica", 20, "bold")
+        label_font = ("Helvetica", 14)
+        entry_font = ("Helvetica", 12)
+        button_font = ("Helvetica", 12, "bold")
+
+        bg_color = "#ffffff"  # White background
+        fg_color = "#2c3e50"  # Dark grey text
+        button_bg = "#1abc9c"  # Teal button background
+        button_fg = "#ffffff"  # White button text
+        frame_bg = "#ecf0f1"  # Light grey frame background
+        title_fg = "#2980b9"  # Blue title text
+
+        # Main frame to center the content
+        main_frame = tk.Frame(self.root, bg=bg_color)
+        main_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Title Label
+        title_label = tk.Label(main_frame, text=f"Edit {parameter}", font=title_font, bg=bg_color, fg=title_fg)
+        title_label.grid(row=0, column=0, columnspan=2, pady=20)
+
+        # Frame for input fields
+        input_frame = tk.Frame(main_frame, bg=frame_bg)
+        input_frame.grid(row=1, column=0, columnspan=2, pady=10, padx=20)
+
         # Create labels and entry fields for editing the selected parameter
-        parameter_label = tk.Label(self.root, text=f"Edit {parameter}:")
-        parameter_label.grid(row=0, column=0)
-        new_value_entry = tk.Entry(self.root)
-        new_value_entry.grid(row=0, column=1)
+        parameter_label = tk.Label(input_frame, text=f"New {parameter}:", font=label_font, bg=frame_bg, fg=fg_color)
+        parameter_label.grid(row=0, column=0, pady=10, padx=10, sticky="w")
+
+        new_value_entry = tk.Entry(input_frame, font=entry_font, bd=2, relief="sunken")
+        new_value_entry.grid(row=0, column=1, pady=10, padx=10, sticky="w")
 
         # Button to confirm the new value
-        confirm_button = tk.Button(self.root, text="Confirm",
+        confirm_button = tk.Button(main_frame, text="Confirm", font=button_font, bg=button_bg, fg=button_fg,
                                    command=lambda: self.update_parameter(parameter, new_value_entry.get()))
-        confirm_button.grid(row=1, columnspan=2)
-        self.create_back_button()
+        confirm_button.grid(row=2, column=0, columnspan=2, pady=20)
 
+        # Create back button
+        back_button = tk.Button(main_frame, text="Back", command=self.edit_selected_parameter_page,
+                                font=button_font, bg="#e74c3c", fg=button_fg)
+        back_button.grid(row=3, column=0, columnspan=2, pady=20)
+
+        # Center the widgets in the grid
+        main_frame.grid_columnconfigure(0, weight=1)
+        main_frame.grid_columnconfigure(1, weight=1)
 
     def update_parameter(self, parameter, new_value):
         try:
