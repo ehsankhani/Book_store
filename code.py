@@ -2343,7 +2343,7 @@ class BookstoreApp:
         self.refresh_database_connection()
 
         # Check if the cart is empty
-        if not self.cart:
+        if self.cart == {}:
             messagebox.showinfo("Empty Cart", "Your cart is empty. Please add items to your cart before proceeding.")
             return
 
@@ -2539,17 +2539,40 @@ class BookstoreApp:
         # Create a new window to display the book info
         info_window = tk.Toplevel(self.root)
         info_window.title("Book Info")
+        info_window.configure(bg="#f0f0f0")
 
-        # Create a frame with black border
-        frame = tk.Frame(info_window, bd=2, relief="solid")
-        frame.pack(padx=10, pady=10)
+        # Create a frame with padding and background color
+        frame = tk.Frame(info_window, bg="#f0f0f0", padx=20, pady=20)
+        frame.pack(expand=True, fill="both")
 
-        # Display text information
-        tk.Label(frame, text=f"Title: {book_info[3]}").pack()
-        tk.Label(frame, text=f"Author: {book_info[1]}").pack()
-        tk.Label(frame, text=f"Publisher: {book_info[6]}").pack()
-        tk.Label(frame, text=f"Category: {book_info[2]}").pack()
-        tk.Label(frame, text=f"Review: {book_info[5]}").pack()
+        # Create a stylish card-like design with a gradient background and rounded corners
+        card_frame = tk.Frame(frame, bg="#FFFFFF", bd=2, relief="solid", padx=20, pady=20)
+        card_frame.pack(expand=True, fill="both")
+
+        # Display text information with improved font and styling
+        title_label = tk.Label(card_frame, text=f"Title: {book_info[3]}", font=("Arial", 18, "bold"), bg="#FFFFFF",
+                               fg="#333333")
+        title_label.pack(anchor="w", pady=(0, 10))
+
+        author_label = tk.Label(card_frame, text=f"Author: {book_info[1]}", font=("Arial", 14), bg="#FFFFFF",
+                                fg="#666666")
+        author_label.pack(anchor="w", pady=(0, 5))
+
+        publisher_label = tk.Label(card_frame, text=f"Publisher: {book_info[6]}", font=("Arial", 14), bg="#FFFFFF",
+                                   fg="#666666")
+        publisher_label.pack(anchor="w", pady=(0, 5))
+
+        category_label = tk.Label(card_frame, text=f"Category: {book_info[2]}", font=("Arial", 14), bg="#FFFFFF",
+                                  fg="#666666")
+        category_label.pack(anchor="w", pady=(0, 5))
+
+        review_label = tk.Label(card_frame, text=f"Review: {book_info[5]}", font=("Arial", 14), bg="#FFFFFF",
+                                fg="#666666")
+        review_label.pack(anchor="w", pady=(0, 10))
+
+        # Create a frame for the book picture with a border and shadow effect
+        picture_frame = tk.Frame(card_frame, bg="#FFFFFF", bd=2, relief="solid")
+        picture_frame.pack(pady=20)
 
         # Check if an image file exists for the book
         image_file = f"book_pics/{book_info[3]}.jpg"
@@ -2557,22 +2580,22 @@ class BookstoreApp:
             # Open the JPEG image file using PIL
             image = Image.open(image_file)
 
-            # Resize the image to 500x500 pixels
+            # Resize the image to fit the frame
             image = image.resize((220, 300), Image.LANCZOS)
 
             # Convert the image to a Tkinter-compatible format
             tk_image = ImageTk.PhotoImage(image)
 
             # Create a Tkinter label to display the image in the frame
-            image_label = tk.Label(frame, image=tk_image)
+            image_label = tk.Label(picture_frame, image=tk_image, bg="#FFFFFF")
             image_label.image = tk_image  # Keep a reference to avoid garbage collection
             image_label.pack(pady=10)
 
-            # Add a black frame around the image label
-            image_label.config(bd=2, relief="solid")
         else:
             # Display a message if no image file is found
-            tk.Label(frame, text="No image available").pack()
+            no_image_label = tk.Label(picture_frame, text="No image available", font=("Arial", 14), bg="#FFFFFF",
+                                      fg="#666666")
+            no_image_label.pack(pady=10)
 
         # Run the Tkinter event loop for the info_window
         info_window.mainloop()
