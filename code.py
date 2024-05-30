@@ -2234,9 +2234,9 @@ class BookstoreApp:
                             # Otherwise, add a new entry to the cart
                             self.cart[book_id] = quantity
 
-                        # Display a confirmation message
-                        messagebox.showinfo("Success",
-                                            f"{quantity} copies of '{book_title}' by {author} added to the cart.")
+                        # Display a confirmation message with a custom style
+                        confirmation_message = f"{quantity} copies of '{book_title}' by {author} added to the cart."
+                        messagebox.showinfo("Success", confirmation_message)
 
                         # Update the cart view window
                         self.view_cart()
@@ -2254,9 +2254,10 @@ class BookstoreApp:
         else:
             cart_window = tk.Toplevel(self.root)
             cart_window.title("Cart")
+            cart_window.configure(bg="#f0f0f0")  # Set background color
 
         # Add a label to indicate the purpose of the window
-        tk.Label(cart_window, text="Your Cart", font=("Helvetica", 16)).pack()
+        tk.Label(cart_window, text="Your Cart", font=("Helvetica", 16), bg="#f0f0f0").pack()
 
         if self.cart:
             # Display the contents of the cart
@@ -2272,21 +2273,22 @@ class BookstoreApp:
                     book_title, author, price, isbn = book_details
                     # Calculate the total price for each book (price * quantity)
                     total_price = price * quantity
-                    label_text = f"{book_title} by {author} (the ISBN {isbn}) - Quantity: {quantity} - Total Price: {total_price}"
-                    tk.Label(cart_window, text=label_text).pack()
+                    label_text = f"{book_title} by {author} (ISBN: {isbn}) - Quantity: {quantity} - Total Price: {total_price}"
+                    tk.Label(cart_window, text=label_text, bg="#f0f0f0", fg="#333333", font=("Helvetica", 12)).pack()
 
                     # After the label is created, extract the ISBN using regular expressions
-                    isbn_match = re.search(r'\(the ISBN (\d+)\)', label_text)
+                    isbn_match = re.search(r'\(ISBN: (\d+)\)', label_text)
                     if isbn_match:
                         isbn = isbn_match.group(1)
         else:
             # If the cart is empty, display a message
-            tk.Label(cart_window, text="Your cart is empty.").pack()
+            tk.Label(cart_window, text="Your cart is empty.", bg="#f0f0f0", fg="#333333", font=("Helvetica", 12)).pack()
 
         # Add a button to close the window if it's a separate window
         if not parent:
-            close_button = tk.Button(cart_window, text="Close", command=cart_window.destroy)
-            close_button.pack()
+            close_button = tk.Button(cart_window, text="Close", command=cart_window.destroy, bg="#4CAF50", fg="white",
+                                     font=("Helvetica", 12), padx=10, pady=5)
+            close_button.pack(pady=10)
 
         # # Assuming you want to print the cart contents at a certain point in your code
         # print("Cart Contents:")
@@ -2297,9 +2299,10 @@ class BookstoreApp:
         # Create a new window for checkout
         checkout_window = tk.Toplevel(self.root)
         checkout_window.title("Checkout")
+        checkout_window.configure(bg="#f0f0f0")  # Set background color
 
         # Add a label to indicate the purpose of the window
-        tk.Label(checkout_window, text="Checkout", font=("Helvetica", 16)).pack()
+        tk.Label(checkout_window, text="Checkout", font=("Helvetica", 20, "bold"), bg="#f0f0f0").pack(pady=10)
 
         # Fetch user ID from the user table
         self.cursor.execute("SELECT user_id FROM users WHERE username = %s", (self.logged_in_username,))
@@ -2310,30 +2313,40 @@ class BookstoreApp:
         user_info = self.cursor.fetchone()
         if user_info:
             first_name, last_name = user_info
-            tk.Label(checkout_window, text=f"User ID: {user_id}").pack()
-            tk.Label(checkout_window, text=f"User: {first_name} {last_name}").pack()
+            tk.Label(checkout_window, text=f"User: {first_name} {last_name}", font=("Helvetica", 14),
+                     bg="#f0f0f0").pack()
 
         # Fetch credit card details from the credit card table
         self.cursor.execute("SELECT card_type, card_number FROM credit_cards WHERE user_id = %s", (user_id,))
         credit_card_info = self.cursor.fetchone()
         if credit_card_info:
             card_type, card_number = credit_card_info
-            tk.Label(checkout_window, text=f"Credit Card Type: {card_type}").pack()
-            tk.Label(checkout_window, text=f"Credit Card Number: {card_number}").pack()
+            tk.Label(checkout_window, text=f"Credit Card Type: {card_type}", font=("Helvetica", 12),
+                     bg="#f0f0f0").pack()
+            tk.Label(checkout_window, text=f"Credit Card Number: {card_number}", font=("Helvetica", 12),
+                     bg="#f0f0f0").pack()
 
         # Display the contents of the cart
         self.view_cart(parent=checkout_window)
 
-        # Add a button to close the checkout window
-        close_button = tk.Button(checkout_window, text="Close", command=checkout_window.destroy)
-        close_button.pack()
-
         # Add a button for finalizing the purchase
-        purchase_button = tk.Button(checkout_window, text="Proceed with Purchase", command=self.purchase)
-        purchase_button.pack()
+        purchase_button = tk.Button(checkout_window, text="Proceed with Purchase", command=self.purchase,
+                                    bg="#4CAF50", fg="white", font=("Helvetica", 14), padx=10, pady=5)
+        purchase_button.pack(pady=20)
+
+        # Add a button to close the checkout window
+        close_button = tk.Button(checkout_window, text="Close", command=checkout_window.destroy,
+                                 bg="#FF5733", fg="white", font=("Helvetica", 14), padx=10, pady=5)
+        close_button.pack()
 
     def purchase(self):
         self.refresh_database_connection()
+
+        # Check if the cart is empty
+        if not self.cart:
+            messagebox.showinfo("Empty Cart", "Your cart is empty. Please add items to your cart before proceeding.")
+            return
+
         # Fetch user ID from the user table
         self.cursor.execute("SELECT user_id FROM users WHERE username = %s", (self.logged_in_username,))
         user_id = self.cursor.fetchone()[0]
@@ -2353,7 +2366,8 @@ class BookstoreApp:
                 purchase_date = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
                 # Fetch credit card details from the credit card table
-                self.cursor.execute("SELECT card_type, card_number, exp_date FROM credit_cards WHERE user_id = %s", (user_id,))
+                self.cursor.execute("SELECT card_type, card_number, exp_date FROM credit_cards WHERE user_id = %s",
+                                    (user_id,))
                 credit_card_info = self.cursor.fetchone()
 
                 if credit_card_info:
@@ -2363,24 +2377,26 @@ class BookstoreApp:
                     if expiry_date < datetime.datetime.now().date():
                         # Credit card is expired, show a messagebox with an option to update card info
                         response = messagebox.askyesno("Credit Card Expired",
-                                                       "Your credit card has expired. Do you want to update your credit card information?")
+                                                       "Your credit card has expired."
+                                                       " Do you want to update your credit card information?")
                         if response:
                             self.edit_selected_parameter_page()
                         return  # Exit the purchase process
 
                     # Insert purchase information into the purchase table
                     self.cursor.execute(
-                        "INSERT INTO purchases (user_id, book_id, isbn, book_name, category, quantity, price, purchase_date, "
-                        "credit_card_type, credit_card_number, purchase_status) "
+                        "INSERT INTO purchases (user_id, book_id, isbn, book_name, category, quantity,"
+                        " price, purchase_date, credit_card_type, credit_card_number, purchase_status) "
                         "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                        (user_id, book_id, book_isbn, title, book_category, quantity, book_price, purchase_date, card_type, card_number,
+                        (user_id, book_id, book_isbn, title, book_category, quantity, book_price,
+                         purchase_date, card_type, card_number,
                          'AwaitingResponse'))
 
                     # Commit the transaction
                     self.mydb.commit()
         # Show a messagebox confirming that the order has been submitted
         messagebox.showinfo("Order Submitted", "Your order has been submitted. Please wait for "
-                                               "confirmation.You can see the confirmation message in the inbox.")
+                                               "confirmation. You can see the confirmation message in the inbox.")
 
         # Clear the cart after the purchase
         self.cart = {}
