@@ -184,50 +184,95 @@ class BookstoreApp:
     def show_admin_login_page(self):
         # Clear the window and create admin login page elements
         self.clear_window()
-        self.admin_login_label = tk.Label(self.root, text="Admin Login")
-        self.admin_login_label.grid(row=0, column=0)
 
-        # Create login input fields
-        self.username_label = tk.Label(self.root, text="Username:")
-        self.username_label.grid(row=1, column=0)
-        self.username_entry = tk.Entry(self.root)
-        self.username_entry.grid(row=1, column=1)
+        # Define custom styles
+        title_font = ("Helvetica", 16, "bold")
+        label_font = ("Helvetica", 14)
+        entry_font = ("Helvetica", 12)
+        button_font = ("Helvetica", 12, "bold")
 
-        self.password_label = tk.Label(self.root, text="Password:")
-        self.password_label.grid(row=2, column=0)
-        self.password_entry = tk.Entry(self.root, show="*")
-        self.password_entry.grid(row=2, column=1)
+        # Main frame to center the content
+        admin_login_frame = tk.Frame(self.root, bg="#f0f0f0")
+        admin_login_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Button to submit admin login information
-        self.admin_login_button = tk.Button(self.root, text="Login", command=self.validate_and_sign_in_admin)
-        self.admin_login_button.grid(row=3, columnspan=2)
+        # Title Label
+        self.admin_login_label = tk.Label(admin_login_frame, text="Admin Login", font=title_font, bg="#f0f0f0",
+                                          fg="#333333")
+        self.admin_login_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
-        # Create back button
-        self.create_back_button()
+        # Username Label and Entry
+        self.username_label = tk.Label(admin_login_frame, text="Username:", font=label_font, bg="#f0f0f0", fg="#333333")
+        self.username_label.grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        self.username_entry = tk.Entry(admin_login_frame, font=entry_font, bd=2, relief="sunken")
+        self.username_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+
+        # Password Label and Entry
+        self.password_label = tk.Label(admin_login_frame, text="Password:", font=label_font, bg="#f0f0f0", fg="#333333")
+        self.password_label.grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        self.password_entry = tk.Entry(admin_login_frame, font=entry_font, bd=2, relief="sunken", show="*")
+        self.password_entry.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
+
+        # Login Button
+        self.admin_login_button = tk.Button(admin_login_frame, text="Login", font=button_font, bg="#4CAF50", fg="white",
+                                            command=self.validate_and_sign_in_admin, width=20)
+        self.admin_login_button.grid(row=3, column=0, columnspan=2, pady=20, padx=10, sticky="ew")
+
+        # Back Button
+        self.back_button = tk.Button(admin_login_frame, text="Back", font=button_font, bg="#FF5733", fg="white",
+                                     command=self.create_main_page, width=20)
+        self.back_button.grid(row=4, column=0, columnspan=2, pady=(10, 0), padx=10, sticky="ew")
+
+        # Configure column weights to ensure proper stretching
+        admin_login_frame.columnconfigure(0, weight=1)
+        admin_login_frame.columnconfigure(1, weight=1)
 
     def show_manager_login_page(self):
         # Clear the window and create manager login page elements
         self.clear_window()
-        self.manager_login_label = tk.Label(self.root, text="Manager Login")
-        self.manager_login_label.grid(row=0, column=0)
 
-        # Create login input fields
-        self.username_label = tk.Label(self.root, text="Username:")
-        self.username_label.grid(row=1, column=0)
-        self.username_entry = tk.Entry(self.root)
-        self.username_entry.grid(row=1, column=1)
+        # Define custom styles
+        title_font = ("Helvetica", 16, "bold")
+        label_font = ("Helvetica", 14)
+        entry_font = ("Helvetica", 12)
+        button_font = ("Helvetica", 12, "bold")
 
-        self.password_label = tk.Label(self.root, text="Password:")
-        self.password_label.grid(row=2, column=0)
-        self.password_entry = tk.Entry(self.root, show="*")
-        self.password_entry.grid(row=2, column=1)
+        # Main frame to center the content
+        manager_login_frame = tk.Frame(self.root, bg="#f0f0f0")
+        manager_login_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Button to submit manager login information
-        self.manager_login_button = tk.Button(self.root, text="Login", command=self.validate_and_sign_in_manager)
-        self.manager_login_button.grid(row=3, columnspan=2)
+        # Title Label
+        self.manager_login_label = tk.Label(manager_login_frame, text="Manager Login", font=title_font, bg="#f0f0f0",
+                                            fg="#333333")
+        self.manager_login_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
 
-        # Create back button
-        self.create_back_button()
+        # Username Label and Entry
+        self.username_label = tk.Label(manager_login_frame, text="Username:", font=label_font, bg="#f0f0f0",
+                                       fg="#333333")
+        self.username_label.grid(row=1, column=0, padx=10, pady=10, sticky="e")
+        self.username_entry = tk.Entry(manager_login_frame, font=entry_font, bd=2, relief="sunken")
+        self.username_entry.grid(row=1, column=1, padx=10, pady=10, sticky="ew")
+
+        # Password Label and Entry
+        self.password_label = tk.Label(manager_login_frame, text="Password:", font=label_font, bg="#f0f0f0",
+                                       fg="#333333")
+        self.password_label.grid(row=2, column=0, padx=10, pady=10, sticky="e")
+        self.password_entry = tk.Entry(manager_login_frame, font=entry_font, bd=2, relief="sunken", show="*")
+        self.password_entry.grid(row=2, column=1, padx=10, pady=10, sticky="ew")
+
+        # Login Button
+        self.manager_login_button = tk.Button(manager_login_frame, text="Login", font=button_font, bg="#4CAF50",
+                                              fg="white",
+                                              command=self.validate_and_sign_in_manager, width=20)
+        self.manager_login_button.grid(row=3, column=0, columnspan=2, pady=20, padx=10, sticky="ew")
+
+        # Back Button
+        self.back_button = tk.Button(manager_login_frame, text="Back", font=button_font, bg="#FF5733", fg="white",
+                                     command=self.create_main_page, width=20)
+        self.back_button.grid(row=4, column=0, columnspan=2, pady=(10, 0), padx=10, sticky="ew")
+
+        # Configure column weights to ensure proper stretching
+        manager_login_frame.columnconfigure(0, weight=1)
+        manager_login_frame.columnconfigure(1, weight=1)
 
     def go_back(self):
         # Check if the user is logged in
@@ -2069,69 +2114,65 @@ class BookstoreApp:
         self.back_button.grid(row=4, column=1, sticky="se")
 
     def show_sign_up_page(self):
-        # Clear the window and create sign-up page elements
+        # Clear the window and set the title
         self.clear_window()
-        self.sign_up_label = tk.Label(self.root, text="Sign Up Page")
-        self.sign_up_label.grid(row=0, column=0)
+        self.root.title("Sign Up Page")
+        self.root.configure(bg="#f0f0f0")
 
-        # Create sign-up input fields
-        self.username_label = tk.Label(self.root, text="Username:")
-        self.username_label.grid(row=1, column=0)
-        self.username_entry = tk.Entry(self.root)
-        self.username_entry.grid(row=1, column=1)
+        # Create a frame to hold all the elements with some padding and styling
+        frame = tk.Frame(self.root, bg="#ffffff", bd=2, relief="groove", padx=20, pady=20)
+        frame.grid(row=0, column=0, padx=20, pady=20)
 
-        self.password_label = tk.Label(self.root, text="Password:")
-        self.password_label.grid(row=2, column=0)
-        self.password_entry = tk.Entry(self.root, show="*")
-        self.password_entry.grid(row=2, column=1)
+        # Title label
+        self.sign_up_label = tk.Label(frame, text="Sign Up", font=("Arial", 24, "bold"), bg="#ffffff")
+        self.sign_up_label.grid(row=0, columnspan=2, pady=(0, 20))
 
-        self.first_name_label = tk.Label(self.root, text="First Name:")
-        self.first_name_label.grid(row=3, column=0)
-        self.first_name_entry = tk.Entry(self.root)
-        self.first_name_entry.grid(row=3, column=1)
+        # Create input fields with labels
+        self.username_entry = tk.Entry(frame, font=("Arial", 12), bd=2, relief="solid")
+        self.password_entry = tk.Entry(frame, show="*", font=("Arial", 12), bd=2, relief="solid")
+        self.first_name_entry = tk.Entry(frame, font=("Arial", 12), bd=2, relief="solid")
+        self.last_name_entry = tk.Entry(frame, font=("Arial", 12), bd=2, relief="solid")
+        self.city_entry = tk.Entry(frame, font=("Arial", 12), bd=2, relief="solid")
+        self.state_entry = tk.Entry(frame, font=("Arial", 12), bd=2, relief="solid")
+        self.zip_code_entry = tk.Entry(frame, font=("Arial", 12), bd=2, relief="solid")
+        self.credit_card_number_entry = tk.Entry(frame, font=("Arial", 12), bd=2, relief="solid")
+        self.expiry_date_entry = tk.Entry(frame, font=("Arial", 12), bd=2, relief="solid")
 
-        self.last_name_label = tk.Label(self.root, text="Last Name:")
-        self.last_name_label.grid(row=4, column=0)
-        self.last_name_entry = tk.Entry(self.root)
-        self.last_name_entry.grid(row=4, column=1)
+        fields = [
+            ("Username:", self.username_entry),
+            ("Password:", self.password_entry),
+            ("First Name:", self.first_name_entry),
+            ("Last Name:", self.last_name_entry),
+            ("City:", self.city_entry),
+            ("State:", self.state_entry),
+            ("Zip Code:", self.zip_code_entry),
+            ("Credit Card Number:", self.credit_card_number_entry),
+            ("Expiry Date:", self.expiry_date_entry)
+        ]
 
-        self.city_label = tk.Label(self.root, text="City:")
-        self.city_label.grid(row=5, column=0)
-        self.city_entry = tk.Entry(self.root)
-        self.city_entry.grid(row=5, column=1)
+        for i, (label_text, entry_var) in enumerate(fields, start=1):
+            label = tk.Label(frame, text=label_text, font=("Arial", 12), bg="#ffffff")
+            label.grid(row=i, column=0, sticky="e", pady=5)
+            entry_var.grid(row=i, column=1, pady=5, padx=(10, 0), ipadx=5, ipady=3)
 
-        self.state_label = tk.Label(self.root, text="State:")
-        self.state_label.grid(row=6, column=0)
-        self.state_entry = tk.Entry(self.root)
-        self.state_entry.grid(row=6, column=1)
-
-        self.zip_code_label = tk.Label(self.root, text="Zip Code:")
-        self.zip_code_label.grid(row=7, column=0)
-        self.zip_code_entry = tk.Entry(self.root)
-        self.zip_code_entry.grid(row=7, column=1)
-
-        self.credit_card_number_label = tk.Label(self.root, text="Credit Card Number:")
-        self.credit_card_number_label.grid(row=8, column=0)
-        self.credit_card_number_entry = tk.Entry(self.root)
-        self.credit_card_number_entry.grid(row=8, column=1)
-
-        self.expiry_date_label = tk.Label(self.root, text="Expiry Date:")
-        self.expiry_date_label.grid(row=9, column=0)
-        self.expiry_date_entry = tk.Entry(self.root)
-        self.expiry_date_entry.grid(row=9, column=1)
-
-        self.card_type_label = tk.Label(self.root, text="Card Type:")
-        self.card_type_label.grid(row=10, column=0)
+        # Card type label and combobox
+        self.card_type_label = tk.Label(frame, text="Card Type:", font=("Arial", 12), bg="#ffffff")
+        self.card_type_label.grid(row=len(fields) + 1, column=0, sticky="e", pady=5)
         self.card_type_var = tk.StringVar()
-        self.card_type_combobox = tk.OptionMenu(self.root, self.card_type_var, "Business Credit Card", "Travel Credit Card", "Secured Credit Card")
-        self.card_type_combobox.grid(row=10, column=1)
+        self.card_type_combobox = tk.OptionMenu(frame, self.card_type_var, "Business Credit Card", "Travel Credit Card",
+                                                "Secured Credit Card")
+        self.card_type_combobox.config(font=("Arial", 12), bg="#ffffff", bd=2, relief="solid")
+        self.card_type_combobox.grid(row=len(fields) + 1, column=1, pady=5, padx=(10, 0), ipadx=5, ipady=3)
 
         # Button to submit sign-up information
-        self.sign_up_button = tk.Button(self.root, text="Sign Up", command=self.validate_and_sign_up)
-        self.sign_up_button.grid(row=11, columnspan=2)
+        self.sign_up_button = tk.Button(frame, text="Sign Up", font=("Arial", 14, "bold"), bg="#4CAF50", fg="#ffffff",
+                                        bd=0, padx=10, pady=5, command=self.validate_and_sign_up)
+        self.sign_up_button.grid(row=len(fields) + 2, columnspan=2, pady=(20, 10))
 
-        # Create back button
-        self.create_back_button()
+        # Create back button directly within this method
+        self.back_button = tk.Button(frame, text="Back", font=("Arial", 14, "bold"), bg="#f44336", fg="#ffffff", bd=0,
+                                     padx=10, pady=5, command=self.create_main_page)
+        self.back_button.grid(row=len(fields) + 3, columnspan=2, pady=(10, 0))
 
     def validate_and_sign_up(self):
         # Get user inputs
