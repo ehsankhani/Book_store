@@ -81,34 +81,49 @@ class Retirement:
     def show_retire_admin_page(self, root):
         self.clear_window(root)
 
-        tk.Label(root, text="user name :").grid(row=0, column=0)
-        self.username_entry = tk.Entry(root)
-        self.username_entry.grid(row=0, column=1)
+        # Create a frame to hold the widgets
+        frame = tk.Frame(root, bg="#E6E6FA", padx=20, pady=10)
+        frame.pack(expand=True)
 
-        tk.Label(root, text="Full Name:").grid(row=1, column=0)
-        self.fullname_entry = tk.Entry(root)
-        self.fullname_entry.grid(row=1, column=1)
+        # Labels and entry fields
+        tk.Label(frame, text="User Name:", font=("Arial", 12), bg="#E6E6FA").grid(row=0, column=0, pady=5, sticky="e")
+        self.username_entry = tk.Entry(frame, font=("Arial", 12))
+        self.username_entry.grid(row=0, column=1, padx=10, pady=5)
 
-        tk.Label(root, text="National ID:").grid(row=2, column=0)
-        self.national_id_entry = tk.Entry(root)
-        self.national_id_entry.grid(row=2, column=1)
+        tk.Label(frame, text="Full Name:", font=("Arial", 12), bg="#E6E6FA").grid(row=1, column=0, pady=5, sticky="e")
+        self.fullname_entry = tk.Entry(frame, font=("Arial", 12))
+        self.fullname_entry.grid(row=1, column=1, padx=10, pady=5)
 
-        tk.Label(root, text="Password:").grid(row=3, column=0)
-        self.password_entry = tk.Entry(root, show="*")
-        self.password_entry.grid(row=3, column=1)
+        tk.Label(frame, text="National ID:", font=("Arial", 12), bg="#E6E6FA").grid(row=2, column=0, pady=5, sticky="e")
+        self.national_id_entry = tk.Entry(frame, font=("Arial", 12))
+        self.national_id_entry.grid(row=2, column=1, padx=10, pady=5)
 
-        tk.Label(root, text="Date of Birth:").grid(row=4, column=0)
-        self.dob_entry = tk.Entry(root)
-        self.dob_entry.grid(row=4, column=1)
+        tk.Label(frame, text="Password:", font=("Arial", 12), bg="#E6E6FA").grid(row=3, column=0, pady=5, sticky="e")
+        self.password_entry = tk.Entry(frame, show="*", font=("Arial", 12))
+        self.password_entry.grid(row=3, column=1, padx=10, pady=5)
 
-        tk.Label(root, text="Phone Number:").grid(row=5, column=0)
-        self.phone_entry = tk.Entry(root)
-        self.phone_entry.grid(row=5, column=1)
+        tk.Label(frame, text="Date of Birth:", font=("Arial", 12), bg="#E6E6FA").grid(row=4, column=0, pady=5,
+                                                                                      sticky="e")
+        self.dob_entry = tk.Entry(frame, font=("Arial", 12))
+        self.dob_entry.grid(row=4, column=1, padx=10, pady=5)
 
-        tk.Button(root, text="Retire and Add New Admin", command=lambda: self.retire_and_add_admin(root)).grid(
-            row=6, column=0, columnspan=2)
-        # Button for Back
-        tk.Button(root, text="Back", command=self.bookstore_app.open_admin_page).grid(row=6, column=2)
+        tk.Label(frame, text="Phone Number:", font=("Arial", 12), bg="#E6E6FA").grid(row=5, column=0, pady=5,
+                                                                                     sticky="e")
+        self.phone_entry = tk.Entry(frame, font=("Arial", 12))
+        self.phone_entry.grid(row=5, column=1, padx=10, pady=5)
+
+        # Button for retiring and adding new admin
+        retire_button = tk.Button(frame, text="Retire and Add New Admin", font=("Arial", 12), bg="#9370DB", fg="white",
+                                  command=lambda: self.retire_and_add_admin(root))
+        retire_button.grid(row=6, column=0, columnspan=4, padx=5, pady=5, sticky="ew")
+
+        # Back button
+        back_button = tk.Button(frame, text="Back", font=("Arial", 12), bg="#FF5733", fg="white",
+                                command=self.bookstore_app.open_admin_page, width=20)
+        back_button.grid(row=7, column=0, columnspan=2, padx=5, pady=0, sticky="ew")
+
+        # Center the frame
+        frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
     def retire_and_add_admin(self, root):
         user_name = self.username_entry.get()
@@ -128,18 +143,18 @@ class Retirement:
             if not admin_id:
                 messagebox.showerror("Error", "Active admin not found.r")
                 return
-
-            # Set the date_out for the current admin
             current_time = datetime.datetime.now()
-            self.cursor.execute("UPDATE admin SET date_out = %s WHERE admin_id = %s", (current_time, admin_id))
-            self.mydb.commit()
-
             # Insert the new admin
             self.cursor.execute("""
                 INSERT INTO admin (username, full_name, password,msg_box, 
                 national_id, phone_number, date_of_birth, date_in, date_out)
                 VALUES (%s, %s, %s,NULL, %s, %s, %s, %s, NULL)
             """, (username, fullname, password, national_id, phone_number, date_of_birth, current_time))
+            self.mydb.commit()
+
+            # Set the date_out for the current admin
+
+            self.cursor.execute("UPDATE admin SET date_out = %s WHERE admin_id = %s", (current_time, admin_id))
             self.mydb.commit()
 
             messagebox.showinfo("Success", "Admin retired and new admin added successfully.")

@@ -604,21 +604,33 @@ class BookstoreApp:
         inbox_window = tk.Toplevel(self.root)
         inbox_window.title("Admin Inbox")
 
-        # Create a listbox to display message subjects
-        message_listbox = tk.Listbox(inbox_window, width=50, height=10)
-        message_listbox.pack(fill="both", expand=True, padx=10, pady=10)
+        # Frame to organize widgets
+        frame = tk.Frame(inbox_window, bg="#f0f0f0")
+        frame.pack(fill="both", expand=True, padx=20, pady=20)
 
-        if messages and messages[0]:
-            # Split messages by comma to separate them
-            msg_parts = messages[0].split(',')
-            for msg in msg_parts:
-                # Extract subject (order for book ID)
-                subject = msg.split(":")[0].strip()
-                message_listbox.insert(tk.END, subject)
+        # Create a listbox to display message subjects
+        message_listbox = tk.Listbox(frame, width=50, height=10, font=("Helvetica", 12), bd=2, relief="sunken")
+        message_listbox.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+        # Function to populate message listbox
+        def populate_messages():
+            if messages and messages[0]:
+                # Split messages by comma to separate them
+                msg_parts = messages[0].split(',')
+                for msg in msg_parts:
+                    # Extract subject (order for book ID)
+                    subject = msg.split(":")[0].strip()
+                    message_listbox.insert(tk.END, subject)
+                return msg_parts  # Return msg_parts
             else:
                 # If there are no messages, show a message in the listbox
                 message_listbox.insert(tk.END, "No messages in the inbox.")
+                return None  # Return None if no messages
 
+        # Populate the message listbox and store msg_parts
+        msg_parts = populate_messages()
+
+        if msg_parts is not None:  # Check if msg_parts is None
             # Function to display full message on selection
             def show_full_message(event):
                 # Get the index of the selected item
@@ -630,7 +642,8 @@ class BookstoreApp:
 
                 # Retrieve and display the full message
                 full_message = msg_parts[index].strip()
-                full_message_text = tk.Text(full_message_window, height=10, width=50)
+                full_message_text = tk.Text(full_message_window, height=10, width=50, font=("Helvetica", 12), bd=2,
+                                            relief="sunken")
                 full_message_text.insert(tk.END, full_message)
                 full_message_text.pack(fill="both", expand=True, padx=10, pady=10)
                 full_message_text.configure(state="disabled")
@@ -645,25 +658,34 @@ class BookstoreApp:
                     self.mydb.commit()  # Commit the transaction
                     full_message_window.destroy()  # Close the full message window
                     messagebox.showinfo("Delete", "Message deleted successfully")
+                    # Clear and repopulate the message listbox
+                    message_listbox.delete(0, tk.END)
+                    populate_messages()
 
                 # Create a button to delete the message
-                delete_button = tk.Button(full_message_window, text="Delete", command=delete_message)
+                delete_button = tk.Button(full_message_window, text="Delete", font=("Helvetica", 12), bg="#FF5733",
+                                          fg="white", command=delete_message)
                 delete_button.pack(pady=10)
 
             # Bind the show_full_message function to listbox selection
             message_listbox.bind("<<ListboxSelect>>", show_full_message)
         else:
-            # If there are no messages, display a message indicating so
-            tk.Label(inbox_window, text="No messages in the inbox", fg="red").pack(pady=10)
+            # If no messages, disable listbox selection
+            message_listbox.bind("<<ListboxSelect>>", lambda event: None)
 
         # Create a button to view user orders
-        user_orders_button = tk.Button(inbox_window, text="User Orders", command=self.open_user_orders)
-        user_orders_button.pack(pady=10)
+        user_orders_button = tk.Button(frame, text="User Orders", font=("Helvetica", 12), bg="#4CAF50", fg="white",
+                                       command=self.open_user_orders)
+        user_orders_button.grid(row=1, column=0, pady=10)
 
         # Create a back button to return to the admin page
-        back_button = tk.Button(inbox_window, text="Back", command=self.open_admin_page)
-        back_button.pack(pady=10)
+        back_button = tk.Button(frame, text="Back", font=("Helvetica", 12), bg="red", fg="white",
+                                command=self.open_admin_page)
+        back_button.grid(row=2, column=0, pady=10)
 
+        # Configure grid weights to ensure proper stretching
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(0, weight=1)
 
     def open_user_orders(self):
         # Clear the window
@@ -706,19 +728,19 @@ class BookstoreApp:
                     else:
                         tk.Label(order_frame, text=value).grid(row=row, column=col, padx=5, pady=5)
                 # Create Accept and Decline buttons for each row
-                accept_button = tk.Button(order_frame, text="Accept",
+                accept_button = tk.Button(order_frame, text="Accept", bg="#4CAF50", fg="white",
                                           command=lambda idx=row: self.accept_order(orders[idx - 1][0]))
-                accept_button.grid(row=row, column=len(column_names), padx=5, pady=5)
-                decline_button = tk.Button(order_frame, text="Decline",
+                accept_button.grid(row=row, column=len(column_names), padx=5, pady=5, sticky="nsew")
+                decline_button = tk.Button(order_frame, text="Decline", bg="#FF5733", fg="white",
                                            command=lambda idx=row: self.decline_order(orders[idx - 1][0]))
-                decline_button.grid(row=row, column=len(column_names) + 1, padx=5, pady=5)
+                decline_button.grid(row=row, column=len(column_names) + 1, padx=5, pady=5, sticky="nsew")
             # Function to display book info for selected orders
             def show_book_info():
                 for row, var in checkboxes.items():
                     if var.get():
                         # Retrieve the ISBN of the selected order
                         # order_id = orders[row - 1][0]  # Adjust index for zero-based indexing
-                        isbn = orders[row - 1][2]  # Extract ISBN from selected order
+                        isbn = orders[row - 1][3]  # Extract ISBN from selected order
                         # Retrieve book info using ISBN and display it
                         self.display_book_info(isbn)
 

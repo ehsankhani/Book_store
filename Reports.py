@@ -635,8 +635,20 @@ class AdminReports:
         self.reports_window = tk.Toplevel(self.parent)
         self.reports_window.title("Admin Reports")
 
+        # Set initial dimensions of the window
+        window_width = 600
+        window_height = 400
+        screen_width = self.reports_window.winfo_screenwidth()
+        screen_height = self.reports_window.winfo_screenheight()
+        x_coordinate = int((screen_width - window_width) / 2)
+        y_coordinate = int((screen_height - window_height) / 2)
+        self.reports_window.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
+
+        # Configure window background color
+        self.reports_window.configure(bg="#F0F0F0")
+
         # Add GUI elements for reports
-        tk.Label(self.reports_window, text="Reports", font=("Helvetica", 16)).pack(pady=10)
+        tk.Label(self.reports_window, text="Reports", font=("Helvetica", 24), bg="#F0F0F0").pack(pady=20)
 
         # Dropdown menu for selecting report type
         report_types = ["Admin Report 1", "Admin Report 2", "Admin Report 3", "Admin Report 4", "Admin Report 5",
@@ -644,45 +656,67 @@ class AdminReports:
         self.selected_report = tk.StringVar(self.reports_window)
         self.selected_report.set(report_types[0])  # Default selection
         report_dropdown = ttk.Combobox(self.reports_window, textvariable=self.selected_report, values=report_types,
-                                       state="readonly")
-        report_dropdown.pack(pady=5)
+                                       state="readonly", font=("Helvetica", 14))
+        report_dropdown.pack(pady=10)
 
         # Button to generate selected report
-        generate_button = tk.Button(self.reports_window, text="Generate Report", command=self.generate_report)
-        generate_button.pack(pady=5)
+        generate_button = tk.Button(self.reports_window, text="Generate Report", command=self.generate_report,
+                                    font=("Helvetica", 14), bg="#4CAF50", fg="white", bd=0)
+        generate_button.pack(pady=10)
 
-        # Button to have the description
-        generate_button = tk.Button(self.reports_window, text="Report description", command=self.report_description)
-        generate_button.pack(pady=5)
+        # Button to display report description
+        description_button = tk.Button(self.reports_window, text="Report Description", command=self.report_description,
+                                       font=("Helvetica", 14), bg="#3498DB", fg="white", bd=0)
+        description_button.pack(pady=10)
 
         # Button for generating custom reports
-        custom_report_button = tk.Button(self.reports_window, text="Custom Report", command=self.generate_custom_report)
-        custom_report_button.pack(pady=5)
+        custom_report_button = tk.Button(self.reports_window, text="Custom Report", command=self.generate_custom_report,
+                                         font=("Helvetica", 14), bg="#FF5733", fg="white", bd=0)
+        custom_report_button.pack(pady=10)
 
     def report_description(self):
         # Create a new window for report descriptions
         description_window = tk.Toplevel(self.parent)
         description_window.title("Report Descriptions")
 
+        # Set initial dimensions of the window
+        window_width = 900
+        window_height = 650
+        screen_width = description_window.winfo_screenwidth()
+        screen_height = description_window.winfo_screenheight()
+        x_coordinate = int((screen_width - window_width) / 2)
+        y_coordinate = int((screen_height - window_height) / 2)
+        description_window.geometry(f"{window_width}x{window_height}+{x_coordinate}+{y_coordinate}")
+
+        # Configure window background color and border
+        description_window.configure(bg="#F0F0F0")
+        description_window.attributes("-alpha", 0.95)  # Set transparency level
+
+        # Add title label
+        title_label = tk.Label(description_window, text="Report Descriptions", font=("Helvetica", 24), bg="#3498DB",
+                               fg="white")
+        title_label.pack(fill=tk.X, pady=20)
+
         # Add labels for report descriptions
         reports = [
             "Report 1: Sum of each category in each month",
             "Report 2: Sum of each category in store",
-            "Report 3: top 10 most purchased books",
-            "Report 4: most expensive books in each category",
+            "Report 3: Top 10 most purchased books",
+            "Report 4: Most expensive books in each category",
             "Report 5: List of the buyers who purchased from each category in each month",
-            "Report 6: avg sell price for each user in each month",
-            "Report 7: avg number of the books published",
-            "Report 8: avg number of the customers in daily",
-
+            "Report 6: Average sell price for each user in each month",
+            "Report 7: Average number of the books published",
+            "Report 8: Average number of customers daily",
         ]
 
         for i, report in enumerate(reports, 1):
-            tk.Label(description_window, text=report, font=("Helvetica", 16)).pack(anchor=tk.W)
+            report_label = tk.Label(description_window, text=report, font=("Helvetica", 16), bg="#F0F0F0")
+            report_label.pack(anchor=tk.W, padx=20, pady=10)
 
         # Add a button to close the window
-        close_button = tk.Button(description_window, text="Close", command=description_window.destroy)
-        close_button.pack(anchor=tk.CENTER)
+        close_button = tk.Button(description_window, text="Close", command=description_window.destroy,
+                                 font=("Helvetica", 14), bg="#E74C3C", fg="white", bd=0)
+        close_button.pack(pady=20)
 
     def generate_report(self):
         report_type = self.selected_report.get()
