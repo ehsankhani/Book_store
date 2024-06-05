@@ -362,36 +362,69 @@ class BookstoreApp:
     def open_admin_page(self):
         # Clear the window and create the admin page
         self.clear_window()
-        welcome_label = tk.Label(self.root, text="Welcome Admin", fg="green")
-        welcome_label.grid(row=0, column=0, columnspan=2)
 
-        # Create a button to manage the bookstore
-        manage_bookstore_button = tk.Button(self.root, text="Manage Bookstore",
+        # Define custom styles
+        title_font = ("Helvetica", 24, "bold")
+        button_font = ("Helvetica", 14, "bold")
+        button_bg = "#3498DB"
+        button_fg = "white"
+        button_hover_bg = "#2980B9"
+        frame_bg = "#f0f8ff"
+        title_fg = "#2C3E50"
+
+        # Main frame to center the content
+        admin_frame = tk.Frame(self.root, bg=frame_bg, bd=10, relief="raised")
+        admin_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Title Label
+        welcome_label = tk.Label(admin_frame, text="Welcome Admin", font=title_font, fg=title_fg, bg=frame_bg)
+        welcome_label.grid(row=0, column=0, columnspan=2, pady=(0, 20))
+
+        # Button style function
+        def style_button(button):
+            button.configure(font=button_font, bg=button_bg, fg=button_fg, activebackground=button_hover_bg, bd=5,
+                             relief="raised", width=40, height=2)
+
+        # Manage Bookstore Button
+        manage_bookstore_button = tk.Button(admin_frame, text="Manage Bookstore",
                                             command=self.open_bookstore_management_page)
-        manage_bookstore_button.grid(row=1, column=0, padx=10, pady=5)
+        style_button(manage_bookstore_button)
+        manage_bookstore_button.grid(row=1, column=0, columnspan=2, padx=10, pady=10)
 
-        # Create a button for listing the books
-        list_books_button = tk.Button(self.root, text="List of the Books", command=self.show_book_list)
-        list_books_button.grid(row=1, column=1, padx=10, pady=5)
+        # List Books Button
+        list_books_button = tk.Button(admin_frame, text="List of the Books", command=self.show_book_list)
+        style_button(list_books_button)
+        list_books_button.grid(row=2, column=0, columnspan=2, padx=10, pady=10)
 
-        # Create a button for placing orders
-        place_orders_button = tk.Button(self.root, text="Place Orders", command=self.open_place_orders_window)
-        place_orders_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+        # Place Orders Button
+        place_orders_button = tk.Button(admin_frame, text="Place Orders", command=self.open_place_orders_window)
+        style_button(place_orders_button)
+        place_orders_button.grid(row=3, column=0, columnspan=2, padx=10, pady=10)
 
-        # Create a button for accessing the inbox
-        inbox_button = tk.Button(self.root, text="Inbox", command=self.open_admin_inbox)
-        inbox_button.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
+        # Inbox Button
+        inbox_button = tk.Button(admin_frame, text="Inbox", command=self.open_admin_inbox)
+        style_button(inbox_button)
+        inbox_button.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
 
-        # Create a button for accessing the inbox
-        admin_reports = tk.Button(self.root, text="Reports", command=self.open_admin_reports)
-        admin_reports.grid(row=4, column=0, columnspan=2, padx=10, pady=5)
+        # Reports Button
+        admin_reports_button = tk.Button(admin_frame, text="Reports", command=self.open_admin_reports)
+        style_button(admin_reports_button)
+        admin_reports_button.grid(row=5, column=0, columnspan=2, padx=10, pady=10)
 
-        retirement_button = tk.Button(self.root, text="Retirement", command=self.open_admin_retirement_page)
-        retirement_button.grid(row=5, column=0, columnspan=2, padx=10, pady=5)
+        # Retirement Button
+        retirement_button = tk.Button(admin_frame, text="Retirement", command=self.open_admin_retirement_page)
+        style_button(retirement_button)
+        retirement_button.grid(row=6, column=0, columnspan=2, padx=10, pady=10)
 
-        # Create a back button
-        back_button = tk.Button(self.root, text="Back", command=self.go_back)
-        back_button.grid(row=6, column=0, columnspan=2, padx=10, pady=5)
+        # Back Button
+        back_button = tk.Button(admin_frame, text="Back", command=self.show_admin_login_page)
+        style_button(back_button)
+        back_button.configure(bg="#E74C3C", activebackground="#C0392B")
+        back_button.grid(row=7, column=0, columnspan=2, padx=10, pady=10)
+
+        # Configure column weights to ensure proper stretching
+        admin_frame.columnconfigure(0, weight=1)
+        admin_frame.columnconfigure(1, weight=1)
 
     def open_admin_reports(self):
         reports_admin = AdminReports(self.root)  # Create an instance of the Reports class
@@ -406,20 +439,27 @@ class BookstoreApp:
         place_orders_window = tk.Toplevel(self.root)
         place_orders_window.title("Place Orders")
 
+        # Frame to organize widgets
+        frame = tk.Frame(place_orders_window, bg="#f0f0f0")
+        frame.pack(padx=20, pady=20)
+
         # Retrieve the list of books from the database
         self.cursor.execute("SELECT book_id, title, present_stock, minimum_property FROM books")
         books_data = self.cursor.fetchall()
 
-        # Create labels to display book details
-        tk.Label(place_orders_window, text="Select a Book:").grid(row=0, column=0, padx=10, pady=5)
-        book_listbox = tk.Listbox(place_orders_window, width=50, height=10)
+        # Label to prompt book selection
+        select_book_label = tk.Label(frame, text="Select a Book:", font=("Helvetica", 12), bg="#f0f0f0")
+        select_book_label.grid(row=0, column=0, padx=10, pady=5)
+
+        # Listbox to display book titles
+        book_listbox = tk.Listbox(frame, width=50, height=10, font=("Helvetica", 10), bd=2, relief="sunken")
         book_listbox.grid(row=1, column=0, padx=10, pady=5)
 
         # Populate the listbox with book titles
         for book in books_data:
             book_listbox.insert(tk.END, f"{book[1]} (ID: {book[0]})")
 
-
+        # Function to show book details
         def show_book_details():
             # Get the selected book index
             selected_index = book_listbox.curselection()
@@ -427,28 +467,43 @@ class BookstoreApp:
                 index = int(selected_index[0])
                 selected_book = books_data[index]
 
+                # Frame to display book details
+                details_frame = tk.Frame(frame, bg="#f0f0f0")
+                details_frame.grid(row=1, column=1, padx=10, pady=5)
+
                 # Display book details
-                tk.Label(place_orders_window, text=f"Quantity: {selected_book[2]}").grid(row=2, column=0, padx=10,
-                                                                                         pady=5)
-                tk.Label(place_orders_window, text=f"Minimum Property: {selected_book[3]}").grid(row=3, column=0,
-                                                                                                 padx=10, pady=5)
+                quantity_label = tk.Label(details_frame, text=f"Quantity: {selected_book[2]}", font=("Helvetica", 10),
+                                          bg="#f0f0f0")
+                quantity_label.grid(row=0, column=0, padx=10, pady=5)
+
+                min_property_label = tk.Label(details_frame, text=f"Minimum Property: {selected_book[3]}",
+                                              font=("Helvetica", 10), bg="#f0f0f0")
+                min_property_label.grid(row=1, column=0, padx=10, pady=5)
 
                 # Entry field for the new quantity to order
-                new_quantity_entry = tk.Entry(place_orders_window)
-                new_quantity_entry.grid(row=4, column=0, padx=10, pady=5)
+                new_quantity_entry = tk.Entry(details_frame, font=("Helvetica", 10), bd=2, relief="sunken")
+                new_quantity_entry.grid(row=2, column=0, padx=10, pady=5)
 
                 # Create the confirm button and pass it to the place_order function
-                confirm_button = tk.Button(place_orders_window, text="Place Order",
+                confirm_button = tk.Button(details_frame, text="Place Order", font=("Helvetica", 10, "bold"),
+                                           bg="#4CAF50", fg="white",
                                            command=lambda: self.place_order(new_quantity_entry, selected_book,
                                                                             confirm_button))
-                confirm_button.grid(row=5, column=0, padx=10, pady=5)
+                confirm_button.grid(row=3, column=0, padx=10, pady=5)
 
         # Button to show book details
-        show_details_button = tk.Button(place_orders_window, text="Show Details", command=show_book_details)
+        show_details_button = tk.Button(frame, text="Show Details", font=("Helvetica", 12), bg="#4CAF50", fg="white",
+                                        command=show_book_details)
         show_details_button.grid(row=1, column=1, padx=10, pady=5)
+
         # Create a back button
-        back_button = tk.Button(place_orders_window, text="back", command=self.open_admin_page)
-        back_button.grid(row=2, column=1, padx=10, pady=5)
+        back_button = tk.Button(frame, text="Back", font=("Helvetica", 12), bg="#FF5733", fg="white",
+                                command=self.open_admin_page)
+        back_button.grid(row=2, column=0, columnspan=2, padx=10, pady=5)
+
+        # Configure column weights to ensure proper stretching
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
 
     def place_order(self, new_quantity_entry, selected_book, confirm_button):
         # Disable the "Place Order" button to prevent multiple clicks
@@ -491,20 +546,51 @@ class BookstoreApp:
     def open_bookstore_management_page(self):
         # Clear the window and create the page for managing the bookstore
         self.clear_window()
-        tk.Label(self.root, text="Manage Bookstore", fg="blue").grid(row=0, column=0, columnspan=2)
+
+        # Define custom styles
+        title_font = ("Helvetica", 24, "bold")
+        button_font = ("Helvetica", 14, "bold")
+        button_bg = "#3498DB"
+        button_fg = "white"
+        button_hover_bg = "#2980B9"
+        frame_bg = "#f0f8ff"
+        title_fg = "#2C3E50"
+
+        # Main frame to center the content
+        manage_frame = tk.Frame(self.root, bg=frame_bg, bd=10, relief="raised")
+        manage_frame.place(relx=0.5, rely=0.5, anchor="center")
+
+        # Title Label
+        tk.Label(manage_frame, text="Manage Bookstore", font=title_font, fg=title_fg, bg=frame_bg).grid(row=0, column=0,
+                                                                                                        columnspan=2,
+                                                                                                        pady=(0, 20))
+
+        # Button style function
+        def style_button(button):
+            button.configure(font=button_font, bg=button_bg, fg=button_fg, activebackground=button_hover_bg, bd=5,
+                             relief="raised", width=20, height=2)
 
         # Create buttons for managing the bookstore
-        insert_button = tk.Button(self.root, text="Insert Book", command=self.insert_book_ui)
-        insert_button.grid(row=1, column=0, padx=10, pady=5)
+        insert_button = tk.Button(manage_frame, text="Insert Book", command=self.insert_book_ui)
+        style_button(insert_button)
+        insert_button.grid(row=1, column=0, padx=10, pady=10)
 
-        modify_button = tk.Button(self.root, text="Modify Book", command=self.modify_book)
-        modify_button.grid(row=1, column=1, padx=10, pady=5)
+        modify_button = tk.Button(manage_frame, text="Modify Book", command=self.modify_book)
+        style_button(modify_button)
+        modify_button.grid(row=1, column=1, padx=10, pady=10)
 
-        delete_button = tk.Button(self.root, text="Delete Book", command=self.delete_book)
-        delete_button.grid(row=2, column=0, padx=10, pady=5)
+        delete_button = tk.Button(manage_frame, text="Delete Book", command=self.delete_book)
+        style_button(delete_button)
+        delete_button.grid(row=2, column=0, padx=10, pady=10)
 
-        back_button = tk.Button(self.root, text="Back", command=self.open_admin_page)
-        back_button.grid(row=2, column=1, padx=10, pady=5)
+        back_button = tk.Button(manage_frame, text="Back", command=self.open_admin_page)
+        style_button(back_button)
+        back_button.configure(bg="#E74C3C", activebackground="#C0392B")
+        back_button.grid(row=2, column=1, padx=10, pady=10)
+
+        # Configure column weights to ensure proper stretching
+        manage_frame.columnconfigure(0, weight=1)
+        manage_frame.columnconfigure(1, weight=1)
 
     def open_admin_inbox(self):
         # Clear the window
@@ -906,68 +992,88 @@ class BookstoreApp:
                 messagebox.showinfo("Success", f"Image successfully saved as {new_file_path}")
             except Exception as e:
                 messagebox.showerror("Error", f"An error occurred: {e}")
+
     def insert_book_ui(self):
         # Clear the window
         self.clear_window()
 
+        # Define custom styles
+        title_font = ("Helvetica", 16, "bold")
+        label_font = ("Helvetica", 14)
+        entry_font = ("Helvetica", 12)
+        button_font = ("Helvetica", 12, "bold")
+        button_bg = "#3498DB"
+        button_fg = "white"
+        button_hover_bg = "#2980B9"
+        frame_bg = "#f0f8ff"
+        title_fg = "#2C3E50"
+
+        # Main frame to center the content
+        insert_frame = tk.Frame(self.root, bg=frame_bg, bd=10, relief="raised")
+        insert_frame.place(relx=0.5, rely=0.5, anchor="center")
+
         # Create labels and entry fields for book details
-        tk.Label(self.root, text="Author:").grid(row=0, column=0)
-        author_entry = tk.Entry(self.root)
-        author_entry.grid(row=0, column=1)
+        def create_label_entry(frame, text, row):
+            tk.Label(frame, text=text, font=label_font, bg=frame_bg, fg=title_fg).grid(row=row, column=0, padx=10,
+                                                                                       pady=5, sticky="e")
+            entry = tk.Entry(frame, font=entry_font, bd=2, relief="sunken")
+            entry.grid(row=row, column=1, padx=10, pady=5, sticky="ew")
+            return entry
 
-        tk.Label(self.root, text="Category:").grid(row=1, column=0)
+        tk.Label(insert_frame, text="Insert Book Details", font=title_font, bg=frame_bg, fg=title_fg).grid(row=0,
+                                                                                                           column=0,
+                                                                                                           columnspan=2,
+                                                                                                           pady=(0, 20))
+
+        author_entry = create_label_entry(insert_frame, "Author:", 1)
         category_var = tk.StringVar()
-        categories = ["Fiction", "poetry", "Children", "classic", "romance", "History",
-                      "Psychology", "Travel/Adventure", "Biography/Autobiography"]
-        category_combobox = tk.OptionMenu(self.root, category_var, *categories)
-        category_combobox.grid(row=1, column=1)
+        categories = ["Fiction", "Poetry", "Children", "Classic", "Romance", "History", "Psychology",
+                      "Travel/Adventure", "Biography/Autobiography"]
+        tk.Label(insert_frame, text="Category:", font=label_font, bg=frame_bg, fg=title_fg).grid(row=2, column=0,
+                                                                                                 padx=10, pady=5,
+                                                                                                 sticky="e")
+        category_combobox = tk.OptionMenu(insert_frame, category_var, *categories)
+        category_combobox.config(font=entry_font, bg="white", bd=2, relief="sunken")
+        category_combobox.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
 
-        tk.Label(self.root, text="Title:").grid(row=2, column=0)
-        title_entry = tk.Entry(self.root)
-        title_entry.grid(row=2, column=1)
+        title_entry = create_label_entry(insert_frame, "Title:", 3)
+        isbn_entry = create_label_entry(insert_frame, "ISBN:", 4)
+        review_entry = create_label_entry(insert_frame, "Review:", 5)
+        publisher_entry = create_label_entry(insert_frame, "Publisher:", 6)
+        min_property_entry = create_label_entry(insert_frame, "Min. Property:", 7)
+        present_property_entry = create_label_entry(insert_frame, "Present Property:", 8)
+        price_entry = create_label_entry(insert_frame, "Price:", 9)
+        publish_year_entry = create_label_entry(insert_frame, "Publish Year:", 10)
 
-        tk.Label(self.root, text="ISBN:").grid(row=3, column=0)
-        isbn_entry = tk.Entry(self.root)
-        isbn_entry.grid(row=3, column=1)
-
-        tk.Label(self.root, text="Review:").grid(row=4, column=0)
-        review_entry = tk.Entry(self.root)
-        review_entry.grid(row=4, column=1)
-
-        tk.Label(self.root, text="Publisher:").grid(row=5, column=0)
-        publisher_entry = tk.Entry(self.root)
-        publisher_entry.grid(row=5, column=1)
-
-        tk.Label(self.root, text="Min. Property:").grid(row=6, column=0)
-        min_property_entry = tk.Entry(self.root)
-        min_property_entry.grid(row=6, column=1)
-
-        tk.Label(self.root, text="Present Property:").grid(row=7, column=0)
-        present_property_entry = tk.Entry(self.root)
-        present_property_entry.grid(row=7, column=1)
-
-        tk.Label(self.root, text="Price:").grid(row=8, column=0)
-        price_entry = tk.Entry(self.root)
-        price_entry.grid(row=8, column=1)
-
-        tk.Label(self.root, text="Publish Year:").grid(row=9, column=0)
-        publish_year_entry = tk.Entry(self.root)
-        publish_year_entry.grid(row=9, column=1)
+        # Button style function
+        def style_button(button):
+            button.configure(font=button_font, bg=button_bg, fg=button_fg, activebackground=button_hover_bg, bd=5,
+                             relief="raised", width=20, height=2)
 
         # Button to submit book details
-        submit_button = tk.Button(self.root, text="Submit", command=lambda: self.insert_book(
+        submit_button = tk.Button(insert_frame, text="Submit", command=lambda: self.insert_book(
             author_entry.get(), category_var.get(), title_entry.get(), isbn_entry.get(), review_entry.get(),
             publisher_entry.get(), min_property_entry.get(), present_property_entry.get(), price_entry.get(),
             publish_year_entry.get()
         ))
-        submit_button.grid(row=10, columnspan=2)
+        style_button(submit_button)
+        submit_button.grid(row=11, column=0, columnspan=2, pady=(10, 5))
 
         # Button to select book image
-        image_button = tk.Button(self.root, text="Select Image", command=lambda: self.select_book_image(title_entry.get()))
-        image_button.grid(row=11, columnspan=2)
+        image_button = tk.Button(insert_frame, text="Select Image",
+                                 command=lambda: self.select_book_image(title_entry.get()))
+        style_button(image_button)
+        image_button.grid(row=12, column=0, columnspan=2, pady=5)
 
-        # Create back button
-        self.create_back_button()
+        # Button to go back to the previous page
+        back_button = tk.Button(insert_frame, text="Back", command=self.open_bookstore_management_page)
+        style_button(back_button)
+        back_button.configure(bg="#E74C3C", activebackground="#C0392B")
+        back_button.grid(row=13, column=0, columnspan=2, pady=(5, 10))
+
+        # Configure column weights to ensure proper stretching
+        insert_frame.columnconfigure(0, weight=1)
+        insert_frame.columnconfigure(1, weight=1)
 
     def record_admin_action(self, action_type, book_id=None, description=None):
         if book_id is None:
@@ -1021,7 +1127,7 @@ class BookstoreApp:
         books = self.cursor.fetchall()
 
         # Create a listbox to display the book titles
-        book_listbox = tk.Listbox(self.root)
+        book_listbox = tk.Listbox(self.root, height=30, width=120)
         book_listbox.pack(padx=10, pady=10)
 
         # Insert each book title into the listbox
@@ -1177,13 +1283,24 @@ class BookstoreApp:
         self.show_book_list_for_deletion()
 
     def show_book_list_for_deletion(self):
+        # Clear the window
+        self.clear_window()
+
         # Retrieve the list of books from the database
         self.cursor.execute("SELECT book_id, title FROM books")
         books = self.cursor.fetchall()
 
+        # Create a frame to hold the listbox and buttons
+        frame = tk.Frame(self.root, bg="#f0f0f0")
+        frame.pack(padx=20, pady=20)
+
+        # Create a label for the title
+        title_label = tk.Label(frame, text="Select Book to Delete", font=("Helvetica", 16, "bold"), bg="#f0f0f0")
+        title_label.grid(row=0, column=0, columnspan=2, pady=(0, 10))
+
         # Create a listbox to display the book titles
-        book_listbox = tk.Listbox(self.root)
-        book_listbox.pack(padx=10, pady=10)
+        book_listbox = tk.Listbox(frame, font=("Helvetica", 12), bd=2, relief="sunken")
+        book_listbox.grid(row=1, column=0, columnspan=2, padx=10, pady=10, sticky="nsew")
 
         # Insert each book title into the listbox
         for book in books:
@@ -1232,15 +1349,22 @@ class BookstoreApp:
                 self.open_bookstore_management_page()
 
         # Create buttons for deletion options
-        delete_catalog_button = tk.Button(self.root, text="Remove from Catalog", command=delete_from_catalog)
-        delete_catalog_button.pack(padx=10, pady=5)
+        delete_catalog_button = tk.Button(frame, text="Remove from Catalog", font=("Helvetica", 12),
+                                          command=delete_from_catalog, bg="#FF5733", fg="white")
+        delete_catalog_button.grid(row=2, column=0, padx=10, pady=5, sticky="ew")
 
-        delete_database_button = tk.Button(self.root, text="Remove from Database", command=delete_from_database)
-        delete_database_button.pack(padx=10, pady=5)
+        delete_database_button = tk.Button(frame, text="Remove from Database", font=("Helvetica", 12),
+                                           command=delete_from_database, bg="#FF5733", fg="white")
+        delete_database_button.grid(row=2, column=1, padx=10, pady=5, sticky="ew")
 
         # Create a back button to return to the book store management page
-        back_button = tk.Button(self.root, text="Back", command=self.open_bookstore_management_page)
-        back_button.pack(pady=5)
+        back_button = tk.Button(frame, text="Back", font=("Helvetica", 12), command=self.open_bookstore_management_page,
+                                bg="#FF5733", fg="white")
+        back_button.grid(row=3, column=0, columnspan=2, pady=(10, 0), sticky="ew")
+
+        # Configure column weights to ensure proper stretching
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
 
     def open_manager_page(self):
         # Clear the window and create the manager page
