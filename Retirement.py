@@ -12,31 +12,67 @@ class Retirement:
 
     def show_retire_manager_page(self, root):
         self.clear_window(root)
+        root.title("Retire Manager")
 
-        tk.Label(root, text="Full Name:").grid(row=0, column=0)
-        self.fullname_entry = tk.Entry(root)
-        self.fullname_entry.grid(row=0, column=1)
+        # Create a main frame to center the content
+        main_frame = tk.Frame(root, bg="#f0f0f0")
+        main_frame.pack(fill=tk.BOTH, expand=True)
 
-        tk.Label(root, text="National ID:").grid(row=1, column=0)
-        self.national_id_entry = tk.Entry(root)
-        self.national_id_entry.grid(row=1, column=1)
+        # Create a subframe for the form content
+        content_frame = tk.Frame(main_frame, bg="#f0f0f0", padx=20, pady=20)
+        content_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-        tk.Label(root, text="Password:").grid(row=2, column=0)
-        self.password_entry = tk.Entry(root, show="*")
-        self.password_entry.grid(row=2, column=1)
+        # Add a title label with larger font and padding
+        title_label = tk.Label(content_frame, text="Retire Manager and Add New Manager", fg="#2c3e50", bg="#f0f0f0",
+                               font=("Helvetica", 20, "bold"))
+        title_label.grid(row=0, column=0, columnspan=2, pady=20)
 
-        tk.Label(root, text="Date of Birth:").grid(row=3, column=0)
-        self.dob_entry = tk.Entry(root)
-        self.dob_entry.grid(row=3, column=1)
+        # Define entry properties
+        entry_bg = "#ecf0f1"
+        entry_fg = "#2c3e50"
+        entry_font = ("Helvetica", 14)
 
-        tk.Label(root, text="Phone Number:").grid(row=4, column=0)
-        self.phone_entry = tk.Entry(root)
-        self.phone_entry.grid(row=4, column=1)
+        # Create labels and entries with consistent styling
+        fields = [
+            ("Full Name:", "fullname_entry"),
+            ("National ID:", "national_id_entry"),
+            ("Password:", "password_entry", True),
+            ("Date of Birth:", "dob_entry"),
+            ("Phone Number:", "phone_entry")
+        ]
 
-        tk.Button(root, text="Retire and Add New Manager", command=lambda: self.retire_and_add_manager(root)).grid(
-            row=5, column=0, columnspan=2)
-        # Button for Back
-        tk.Button(root, text="Back", command=self.bookstore_app.open_manager_page).grid(row=5, column=2)
+        for i, field in enumerate(fields, start=1):
+            label_text = field[0]
+            entry_var_name = field[1]
+            show_asterisk = field[2] if len(field) > 2 else False
+
+            tk.Label(content_frame, text=label_text, bg="#f0f0f0", font=("Helvetica", 14)).grid(row=i, column=0,
+                                                                                                padx=10, pady=5,
+                                                                                                sticky=tk.E)
+            entry_var = tk.Entry(content_frame, bg=entry_bg, fg=entry_fg, font=entry_font,
+                                 show="*" if show_asterisk else None)
+            entry_var.grid(row=i, column=1, padx=10, pady=5)
+            setattr(self, entry_var_name, entry_var)
+
+        # Define button styles
+        button_bg = "#3498db"
+        button_fg = "white"
+        button_font = ("Helvetica", 14, "bold")
+        button_hover_bg = "#2980b9"
+
+        # Helper function to create styled buttons
+        def create_button(text, command, row, col, colspan=1):
+            button = tk.Button(content_frame, text=text, command=command, bg=button_bg, fg=button_fg, font=button_font)
+            button.grid(row=row, column=col, columnspan=colspan, padx=10, pady=10, sticky="ew")
+
+            # Add hover effect
+            button.bind("<Enter>", lambda e: button.config(bg=button_hover_bg))
+            button.bind("<Leave>", lambda e: button.config(bg=button_bg))
+            return button
+
+        # Add buttons for actions
+        create_button("Retire and Add New Manager", lambda: self.retire_and_add_manager(root), len(fields) + 1, 0, 2)
+        create_button("Back", self.bookstore_app.open_manager_page, len(fields) + 2, 0, 2)
 
     def retire_and_add_manager(self, root):
         fullname = self.fullname_entry.get()

@@ -969,7 +969,7 @@ class BookstoreApp:
         books = self.cursor.fetchall()
 
         # Create a listbox to display the book titles
-        book_listbox = tk.Listbox(self.root, height=10, width=60)
+        book_listbox = tk.Listbox(self.root, height=20, width=80)
         book_listbox.pack(padx=10, pady=10)
 
         # Insert each book title into the listbox
@@ -1391,44 +1391,79 @@ class BookstoreApp:
     def open_manager_page(self):
         # Clear the window and create the manager page
         self.clear_window()
-        tk.Label(self.root, text="Welcome Manager", fg="green").grid(row=0, column=0, columnspan=2)
 
-        # Add manager-specific GUI elements here
-        # For example, buttons to perform manager actions
-        inbox_button = tk.Button(self.root, text="Inbox", command=self.open_manager_inbox)
-        inbox_button.grid(row=1, column=0, padx=10, pady=5)
+        # Set window title
+        self.root.title("Manager Dashboard")
 
-        book_operations_button = tk.Button(self.root, text="Book Operations", command=self.open_book_operations)
-        book_operations_button.grid(row=2, column=0, padx=10, pady=5)
+        # Create a frame for the manager page content
+        manager_frame = tk.Frame(self.root, bg="#2c3e50")
+        manager_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        edit_info_button = tk.Button(self.root, text="Edit Info", command=self.open_edit_manager_info)
-        edit_info_button.grid(row=3, column=0, padx=10, pady=5)
+        # Add a welcome label
+        welcome_label = tk.Label(manager_frame, text="Welcome Manager", fg="#ecf0f1", bg="#2c3e50",
+                                 font=("Helvetica", 28, "bold"))
+        welcome_label.pack(pady=20)
 
-        reports_button = tk.Button(self.root, text="Reports", command=self.open_manager_reports)
-        reports_button.grid(row=4, column=0, padx=10, pady=5)
+        # Create a frame for the buttons with a grid layout
+        button_frame = tk.Frame(manager_frame, bg="#2c3e50")
+        button_frame.pack(pady=20)
 
-        retirement_button = tk.Button(self.root, text="Retirement", command=self.open_retirement_page)
-        retirement_button.grid(row=5, column=0, padx=10, pady=5)
+        # Define button properties
+        button_font = ("Helvetica", 14, "bold")
+        button_style = ttk.Style()
+        button_style.configure("TButton", font=button_font, padding=10)
+        button_style.map("TButton",
+                         foreground=[('active', '#30405C')],
+                         background=[('active', '#FF1111')],
+                         relief=[('pressed', 'sunken'), ('!pressed', 'raised')])
 
-        inequallity_button = tk.Button(self.root, text="Check for inequallity", command=self.check_for_equality)
-        inequallity_button.grid(row=1, column=1, padx=10, pady=5)
+        # Helper function to create buttons with hover effect
+        def create_button(text, command, row, col, colspan=1):
+            button = ttk.Button(button_frame, text=text, style="TButton", command=command)
+            button.grid(row=row, column=col, columnspan=colspan, padx=20, pady=15, sticky="ew")
 
-        logout_button = tk.Button(self.root, text="Logout", command=self.create_main_page)
-        logout_button.grid(row=2, column=1, padx=10, pady=5)
+            # Add hover effect
+            button.bind("<Enter>", lambda e: button.config(style="Hover.TButton"))
+            button.bind("<Leave>", lambda e: button.config(style="TButton"))
+
+        # Define hover button style
+        button_style.configure("Hover.TButton", font=button_font, padding=10, background="#FF5733")
+
+        # Add manager-specific buttons in a more interesting layout
+        create_button("Inbox", self.open_manager_inbox, 0, 0, 2)
+        create_button("Book Operations", self.open_book_operations, 1, 0)
+        create_button("Edit Info", self.open_edit_manager_info, 1, 1)
+        create_button("Reports", self.open_manager_reports, 2, 0)
+        create_button("Retirement", self.open_retirement_page, 2, 1)
+        create_button("Check for Inequality", self.check_for_inequality, 3, 0, 2)
+        create_button("Logout", self.create_main_page, 4, 0, 2)
+
+        # Set equal column weights to ensure even spacing
+        for i in range(2):
+            button_frame.columnconfigure(i, weight=1)
+
+        # Set the window to a reasonable size
+        self.root.geometry("700x500")
 
         # Add a method to open the retirement page
     def open_retirement_page(self):
         self.retirement.show_retire_manager_page(self.root)
 
-    def check_for_equality(self):
+    def check_for_inequality(self):
         self.clear_window()
-        tk.Label(self.root, text="Stock Levels Check").grid(row=0, columnspan=2, padx=10, pady=10)
+
+        # Create a frame for the content with a consistent background color
+        content_frame = tk.Frame(self.root, bg="#f0f0f0")
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        # Add a title label with a larger font and some padding
+        title_label = tk.Label(content_frame, text="Stock Levels Check", font=("Helvetica", 20, "bold"), bg="#f0f0f0")
+        title_label.pack(pady=10)
 
         # Fetch the present stock and minimum property from the books table
         self.cursor.execute("SELECT title, present_stock, minimum_property FROM books")
         books = self.cursor.fetchall()
 
-        row = 1
         for title, present_stock, min_property in books:
             try:
                 # Convert present_stock and min_property to integers (or floats if needed)
@@ -1436,23 +1471,32 @@ class BookstoreApp:
                 min_property = int(min_property)
 
                 if present_stock <= min_property * 1.1:  # If stock is near or below 10% above the minimum
-                    tk.Label(self.root,
-                             text=f"Warning: {title} stock is low. Present: {present_stock}, Minimum: {min_property}").grid(
-                        row=row, columnspan=2, padx=10, pady=5)
-                    row += 1
+                    # Display a warning label for low stock levels
+                    warning_label = tk.Label(content_frame,
+                                             text=f"Warning: {title} stock is low. Present: {present_stock}, Minimum: {min_property}",
+                                             bg="#f0f0f0")
+                    warning_label.pack(pady=5)
             except ValueError:
                 # Handle the case where present_stock or min_property are not numeric
-                tk.Label(self.root,
-                         text=f"Error: Invalid stock data for {title}. Present: {present_stock}, Minimum: {min_property}").grid(
-                    row=row, columnspan=2, padx=10, pady=5)
-                row += 1
+                error_label = tk.Label(content_frame,
+                                       text=f"Error: Invalid stock data for {title}. Present: {present_stock}, Minimum: {min_property}",
+                                       bg="#f0f0f0")
+                error_label.pack(pady=5)
 
-        # Add buttons for navigation
-        go_to_modify_button = tk.Button(self.root, text="Go to Modify Books", command=self.open_book_operations)
-        go_to_modify_button.grid(row=row, column=0, padx=10, pady=10)
+        # Add spacing between elements
+        content_frame.pack_propagate(False)
 
-        back_button = tk.Button(self.root, text="Back", command=self.open_manager_page)
-        back_button.grid(row=row, column=1, padx=10, pady=10)
+        # Add buttons for navigation with some padding
+        navigation_frame = tk.Frame(content_frame, bg="#f0f0f0")
+        navigation_frame.pack(pady=20)
+
+        go_to_modify_button = tk.Button(navigation_frame, text="Go to Modify Books", command=self.open_book_operations,
+                                        bg="#3498db", fg="white", padx=10, pady=5)
+        go_to_modify_button.grid(row=0, column=0, padx=10)
+
+        back_button = tk.Button(navigation_frame, text="Back", command=self.open_manager_page,
+                                bg="#2ecc71", fg="white", padx=10, pady=5)
+        back_button.grid(row=0, column=1, padx=10)
 
     def open_manager_reports(self):
         reports_manager = ManagerReports(self.root)  # Create an instance of the Reports class
@@ -1462,7 +1506,16 @@ class BookstoreApp:
     def open_edit_manager_info(self):
         # Clear the window and create the edit info page
         self.clear_window()
-        tk.Label(self.root, text="Edit Manager Info", fg="blue").grid(row=0, column=0, columnspan=2)
+        self.root.title("Edit Manager Info")
+
+        # Create a frame for the content
+        content_frame = tk.Frame(self.root, bg="#f0f0f0")
+        content_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        # Add a title label with larger font and padding
+        title_label = tk.Label(content_frame, text="Edit Manager Info", fg="#2c3e50", bg="#f0f0f0",
+                               font=("Helvetica", 20, "bold"))
+        title_label.grid(row=0, column=0, columnspan=2, pady=20)
 
         try:
             # Fetch existing manager info from the database where date_out is NULL
@@ -1471,44 +1524,81 @@ class BookstoreApp:
 
             if manager_info:
                 manager_id = manager_info[0]  # Assuming index 0 is for manager ID
+
+                # Define entry properties
+                entry_bg = "#ecf0f1"
+                entry_fg = "#2c3e50"
+                entry_font = ("Helvetica", 14)
+
                 # Populate entry fields with existing manager info
-                tk.Label(self.root, text="Full Name:").grid(row=1, column=0, padx=10, pady=5)
-                full_name_entry = tk.Entry(self.root)
+                tk.Label(content_frame, text="Full Name:", bg="#f0f0f0", font=("Helvetica", 14)).grid(row=1, column=0,
+                                                                                                      padx=10, pady=5,
+                                                                                                      sticky=tk.E)
+                full_name_entry = tk.Entry(content_frame, bg=entry_bg, fg=entry_fg, font=entry_font)
                 full_name_entry.insert(tk.END, manager_info[2])  # for full name
                 full_name_entry.grid(row=1, column=1, padx=10, pady=5)
 
-                tk.Label(self.root, text="National ID:").grid(row=2, column=0, padx=10, pady=5)
-                national_id_entry = tk.Entry(self.root)
+                tk.Label(content_frame, text="National ID:", bg="#f0f0f0", font=("Helvetica", 14)).grid(row=2, column=0,
+                                                                                                        padx=10, pady=5,
+                                                                                                        sticky=tk.E)
+                national_id_entry = tk.Entry(content_frame, bg=entry_bg, fg=entry_fg, font=entry_font)
                 national_id_entry.insert(tk.END, manager_info[3])  # for national ID
                 national_id_entry.grid(row=2, column=1, padx=10, pady=5)
 
-                tk.Label(self.root, text="Password:").grid(row=3, column=0, padx=10, pady=5)
-                password_entry = tk.Entry(self.root)
+                tk.Label(content_frame, text="Password:", bg="#f0f0f0", font=("Helvetica", 14)).grid(row=3, column=0,
+                                                                                                     padx=10, pady=5,
+                                                                                                     sticky=tk.E)
+                password_entry = tk.Entry(content_frame, bg=entry_bg, fg=entry_fg, font=entry_font, show="*")
                 password_entry.insert(tk.END, manager_info[6])  # for password
                 password_entry.grid(row=3, column=1, padx=10, pady=5)
 
-                tk.Label(self.root, text="Date of Birth:").grid(row=4, column=0, padx=10, pady=5)
-                dob_entry = tk.Entry(self.root)
+                tk.Label(content_frame, text="Date of Birth:", bg="#f0f0f0", font=("Helvetica", 14)).grid(row=4,
+                                                                                                          column=0,
+                                                                                                          padx=10,
+                                                                                                          pady=5,
+                                                                                                          sticky=tk.E)
+                dob_entry = tk.Entry(content_frame, bg=entry_bg, fg=entry_fg, font=entry_font)
                 dob_entry.insert(tk.END, manager_info[7])  # for date of birth
                 dob_entry.grid(row=4, column=1, padx=10, pady=5)
 
-                tk.Label(self.root, text="Phone Number:").grid(row=5, column=0, padx=10, pady=5)
-                phone_entry = tk.Entry(self.root)
+                tk.Label(content_frame, text="Phone Number:", bg="#f0f0f0", font=("Helvetica", 14)).grid(row=5,
+                                                                                                         column=0,
+                                                                                                         padx=10,
+                                                                                                         pady=5,
+                                                                                                         sticky=tk.E)
+                phone_entry = tk.Entry(content_frame, bg=entry_bg, fg=entry_fg, font=entry_font)
                 phone_entry.insert(tk.END, manager_info[8])  # for phone number
                 phone_entry.grid(row=5, column=1, padx=10, pady=5)
 
-                # Add button to submit changes
-                submit_button = tk.Button(self.root, text="Submit",
-                                          command=lambda: self.update_manager_info(full_name_entry.get(),
-                                                                                   national_id_entry.get(),
-                                                                                   password_entry.get(),
-                                                                                   dob_entry.get(),
-                                                                                   phone_entry.get(),
-                                                                                   manager_id))
+                # Define button styles
+                button_bg = "#3498db"
+                button_fg = "white"
+                button_font = ("Helvetica", 14, "bold")
+                button_hover_bg = "#2980b9"
 
-                submit_button.grid(row=6, column=0, columnspan=2, padx=10, pady=5)
-                back_button = tk.Button(self.root, text="back", command=self.open_manager_page)
-                back_button.grid(row=6, column=1, padx=10, pady=5)
+                # Helper function to create styled buttons
+                def create_button(text, command, row, col, colspan=1):
+                    button = tk.Button(content_frame, text=text, command=command, bg=button_bg, fg=button_fg,
+                                       font=button_font)
+                    button.grid(row=row, column=col, columnspan=colspan, padx=10, pady=10, sticky="ew")
+
+                    # Add hover effect
+                    button.bind("<Enter>", lambda e: button.config(bg=button_hover_bg))
+                    button.bind("<Leave>", lambda e: button.config(bg=button_bg))
+                    return button
+
+                # Add button to submit changes
+                create_button("Submit",
+                              lambda: self.update_manager_info(full_name_entry.get(),
+                                                               national_id_entry.get(),
+                                                               password_entry.get(),
+                                                               dob_entry.get(),
+                                                               phone_entry.get(),
+                                                               manager_id), 6, 0, 2)
+
+                # Add button to go back to the manager page
+                create_button("Back", self.open_manager_page, 7, 0, 2)
+
             else:
                 messagebox.showerror("Error", "No active manager found.")
         except mysql.connector.Error as err:
@@ -2036,9 +2126,9 @@ class BookstoreApp:
                     message_listbox.insert(tk.END, subject)
                 else:
                     message_listbox.insert(tk.END, msg)  # Insert the whole message
-            else:
-                # If there are no messages, show a message in the listbox
-                message_listbox.insert(tk.END, "No messages in the inbox.")
+            # else:
+            #     # If there are no messages, show a message in the listbox
+            #     message_listbox.insert(tk.END, "No messages in the inbox.")
 
             # Function to display full message on selection
             def show_full_message(event):
@@ -2150,7 +2240,8 @@ class BookstoreApp:
                         book_id = int(parts[0].split()[-1])
 
                         # Insert a record into manager_record table for declining the order
-                        insert_record_query = "INSERT INTO manager_records (manager_id, description, orders_to_add, timestamp) VALUES (%s, %s, %s, NOW())"
+                        insert_record_query = ("INSERT INTO manager_records (manager_id, description, orders_to_add, "
+                                               "timestamp) VALUES (%s, %s, %s, NOW())")
                         description = f"Declined order: {full_message}. Additional info: {additional_info}"
                         self.cursor.execute(insert_record_query,
                                             (self.manager_id, description, f"Declined for Book ID {book_id}"))

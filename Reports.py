@@ -20,69 +20,70 @@ class ManagerReports:
         self.reports_window = tk.Toplevel(self.parent)
         self.reports_window.title("Manager Reports")
 
-        # Add GUI elements for reports
-        tk.Label(self.reports_window, text="Reports", font=("Helvetica", 16)).pack(pady=10)
+        # Set the background color of the window
+        self.reports_window.configure(bg="#f0f0f0")
+
+        # Add a title label with a larger font and some padding
+        title_label = tk.Label(self.reports_window, text="Reports", font=("Helvetica", 20, "bold"), bg="#f0f0f0")
+        title_label.pack(pady=20)
 
         # Dropdown menu for selecting report type
         report_types = ["Report 1", "Report 2", "Report 3", "Report 4", "Report 5", "Report 6", "Report 7", "Report 8"]
         self.selected_report = tk.StringVar(self.reports_window)
         self.selected_report.set(report_types[0])  # Default selection
-        report_dropdown = ttk.Combobox(self.reports_window, textvariable=self.selected_report, values=report_types, state="readonly")
-        report_dropdown.pack(pady=5)
+        report_dropdown = ttk.Combobox(self.reports_window, textvariable=self.selected_report, values=report_types,
+                                       state="readonly")
+        report_dropdown.pack(pady=10)
 
         # Button to generate selected report
-        generate_button = tk.Button(self.reports_window, text="Generate Report", command=self.generate_report)
-        generate_button.pack(pady=5)
-        # Button to have the description
-        generate_button = tk.Button(self.reports_window, text="Report description", command=self.report_description)
-        generate_button.pack(pady=5)
+        generate_button = tk.Button(self.reports_window, text="Generate Report", command=self.generate_report,
+                                    bg="#3498db", fg="white", padx=10, pady=5)
+        generate_button.pack(pady=10)
+
+        # Button to show report description
+        description_button = tk.Button(self.reports_window, text="Report Description", command=self.report_description,
+                                       bg="#2ecc71", fg="white", padx=10, pady=5)
+        description_button.pack(pady=10)
 
         # Button for generating custom reports
-        custom_report_button = tk.Button(self.reports_window, text="Custom Report", command=self.generate_custom_report)
-        custom_report_button.pack(pady=5)
+        custom_report_button = tk.Button(self.reports_window, text="Custom Report", command=self.generate_custom_report,
+                                         bg="#e74c3c", fg="white", padx=10, pady=5)
+        custom_report_button.pack(pady=10)
 
     def report_description(self):
         # Create a new window for report descriptions
         description_window = tk.Toplevel(self.parent)
         description_window.title("Report Descriptions")
 
+        # Set the background color of the window
+        description_window.configure(bg="#f0f0f0")
+
+        # Add a title label with larger font and padding
+        title_label = tk.Label(description_window, text="Report Descriptions", font=("Helvetica", 20, "bold"),
+                               bg="#f0f0f0")
+        title_label.pack(pady=20)
+
+        # Define report descriptions
+        reports = [
+            "Report 1: Sum of each category in each month",
+            "Report 2: Sum of each category in store",
+            "Report 3: Top 10 most purchased books",
+            "Report 4: Most expensive books in each category",
+            "Report 5: List of the buyers who purchased from each category in each month",
+            "Report 6: Average sell price for each user in each month",
+            "Report 7: Average number of books published",
+            "Report 8: Average number of customers daily"
+        ]
+
         # Add labels for report descriptions
-        report1_label = tk.Label(description_window,
-                                 text="Report 1: Sum of each category in each month", font=("Helvetica", 16))
-        report1_label.pack(anchor=tk.W)
-
-        report2_label = tk.Label(description_window,
-                                 text="Report 2: Sum of each category in store", font=("Helvetica", 16))
-        report2_label.pack(anchor=tk.W)
-
-        report3_label = tk.Label(description_window,
-                                 text="Report 3: top 10 most purchased books", font=("Helvetica", 16))
-        report3_label.pack(anchor=tk.W)
-
-        report4_label = tk.Label(description_window,
-                                 text="Report 4: most expensive books in each category", font=("Helvetica", 16))
-        report4_label.pack(anchor=tk.W)
-
-        report5_label = tk.Label(description_window,
-                                 text="Report 5: List of the buyers who purchased from each category in each month",
-                                 font=("Helvetica", 16))
-        report5_label.pack(anchor=tk.W)
-
-        report6_label = tk.Label(description_window,
-                                 text="Report 6: avg sell price for each user in each month", font=("Helvetica", 16))
-        report6_label.pack(anchor=tk.W)
-
-        report7_label = tk.Label(description_window,
-                                 text="Report 7: avg number of the books published", font=("Helvetica", 16))
-        report7_label.pack(anchor=tk.W)
-
-        report8_label = tk.Label(description_window,
-                                 text="Report 8: avg number of the customers in daily", font=("Helvetica", 16))
-        report8_label.pack(anchor=tk.W)
+        for report in reports:
+            report_label = tk.Label(description_window, text=report, font=("Helvetica", 14), bg="#f0f0f0")
+            report_label.pack(anchor=tk.W, padx=20, pady=5)
 
         # Add a button to close the window
-        close_button = tk.Button(description_window, text="Close", command=description_window.destroy)
-        close_button.pack(anchor=tk.CENTER)
+        close_button = tk.Button(description_window, text="Close", command=description_window.destroy, bg="#3498db",
+                                 fg="white", padx=10, pady=5)
+        close_button.pack(anchor=tk.CENTER, pady=20)
 
         # Run the Tkinter event loop for the description_window
         description_window.mainloop()
